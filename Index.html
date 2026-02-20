@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Customer Care AI Demo</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #111;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .widget {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 300px;
+      height: 200px;
+      background: #222;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.6);
+      padding: 20px;
+    }
+
+    .tyre {
+      width: 80px;
+      height: 80px;
+      background: radial-gradient(circle, #444 40%, #222 60%);
+      border-radius: 50%;
+      margin: 0 auto 10px;
+      animation: bounce 1.2s infinite alternate;
+    }
+
+    @keyframes bounce {
+      from { transform: translateY(0); }
+      to { transform: translateY(-6px); }
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      background: #ff9900;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Customer Care AI Universal Demo</h1>
+
+<div class="widget">
+  <div class="tyre"></div>
+  <p style="text-align:center;">G'day mate — need tyres or a quote?</p>
+  <button onclick="alert('Voice integration coming next step')">Talk to Agent</button>
+</div>
+
+</body>
+</html>
