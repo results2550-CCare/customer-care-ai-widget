@@ -1,6 +1,119 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta charset="UTF-8">
+<title>Customer Care AI</title>
+<style>
+body {
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#0f0f0f;
+  color:white;
+}
+
+.demo-content {
+  padding:60px;
+  text-align:center;
+}
+
+.widget {
+  position:fixed;
+  bottom:20px;
+  right:20px;
+  width:320px;
+  height:420px;
+  background:#1c1c1c;
+  border-radius:16px;
+  box-shadow:0 0 25px rgba(0,0,0,0.6);
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+
+.agent-video {
+  width:100%;
+  height:180px;
+  background:black;
+}
+
+.agent-video video {
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+.chat {
+  flex:1;
+  padding:15px;
+  overflow-y:auto;
+  font-size:14px;
+}
+
+.input-bar {
+  display:flex;
+  border-top:1px solid #333;
+}
+
+.input-bar input {
+  flex:1;
+  padding:10px;
+  border:none;
+  background:#111;
+  color:white;
+}
+
+.input-bar button {
+  padding:10px 15px;
+  border:none;
+  background:#ff9900;
+  font-weight:bold;
+  cursor:pointer;
+}
+</style>
+</head>
+<body>
+
+<div class="demo-content">
+  <h1>Customer Care AI Demo</h1>
+  <p>This site is powered by an intelligent conversational agent.</p>
+</div>
+
+<div class="widget">
+  <div class="agent-video">
+    <video autoplay muted loop>
+      <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4">
+    </video>
+  </div>
+
+  <div class="chat" id="chat">
+    <p><strong>Agent:</strong> G'day. How can I help you today?</p>
+  </div>
+
+  <div class="input-bar">
+    <input type="text" id="userInput" placeholder="Type your question...">
+    <button onclick="sendMessage()">Send</button>
+  </div>
+</div>
+
+<script>
+function sendMessage() {
+  const input = document.getElementById("userInput");
+  const chat = document.getElementById("chat");
+
+  if(input.value.trim() === "") return;
+
+  chat.innerHTML += "<p><strong>You:</strong> " + input.value + "</p>";
+  chat.innerHTML += "<p><strong>Agent:</strong> I'm a demo version. Voice integration coming next.</p>";
+
+  input.value = "";
+  chat.scrollTop = chat.scrollHeight;
+}
+</script>
+
+</body>
+</html><!DOCTYPE html>
+<html>
+<head>
   <title>Customer Care AI Demo</title>
   <style>
     body {
