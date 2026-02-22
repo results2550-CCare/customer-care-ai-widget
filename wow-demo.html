@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Customer Care AI — Cinematic Demo (Tech Monster)</title>
+<style>
+  :root{
+    --bg1:#03040a;
+    --bg2:#071427;
+    --sun:#ff7a18;
+    --sun2:#ffb400;
+    --ocean1:#071c2f;
+    --ocean2:#04223a;
+    --panel:rgba(15,23,42,.78);
+    --border:rgba(255,255,255,.14);
+    --text:#eaeaf2;
+    --muted:rgba(234,234,242,.72);
+    --accent:#ffa500;
+    --shadow:0 20px 70px rgba(0,0,0,.55);
+    --r:22px;
+    --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family:var(--font);
+    color:var(--text);
+    background: radial-gradient(900px 600px at 70% 15%, rgba(255,180,0,.10), transparent 60%),
+               linear-gradient(180deg, var(--bg1), var(--bg2));
+    overflow:hidden;
+  }
+
+  /* Cinematic ocean sunset background */
+  .bg{ position:fixed; inset:0; pointer-events:none; }
+  .sun{
+    position:absolute;
+    width:min(42vw,420px);
+    aspect-ratio:1/1;
+    border-radius:50%;
+    left:50%;
+    top:20%;
+    transform:translateX(-50%);
+    background:
+      radial-gradient(circle at 35% 35%, rgba(255,255,255,.25), transparent 35%),
+      radial-gradient(circle at 50% 55%, rgba(255,180,0,.55), rgba(255,122,24,.60) 40%, rgba(255,122,24,.15) 70%, transparent 78%);
+    opacity:.95;
+    filter: blur(.2px);
+  }
+  .haze{
+    position:absolute; inset:0;
+    background: radial-gradient(900px 300px at 50% 35%, rgba(255,120,40,.12), transparent 62%);
+    mix-blend-mode:screen;
+  }
+  .horizon{
+    position:absolute; left:0; right:0; top:55%; height:2px;
+    background:linear-gradient(90deg, transparent, rgba(255,180,0,.35), transparent);
+    opacity:.65;
+  }
+  .ocean{
+    position:absolute; left:0; right:0; bottom:0; top:55%;
+    background:
+      linear-gradient(180deg, rgba(255,160,50,.06), rgba(3,9,18,0) 10%),
+      linear-gradient(180deg, var(--ocean1), var(--ocean2));
+    overflow:hidden;
+  }
+  .wave{
+    position:absolute; left:-10%; width:120%; height:55%; bottom:-10%;
+    background:
+      radial-gradient(50% 25% at 20% 60%, rgba(255,180,0,.12), transparent 60%),
+      radial-gradient(50% 25% at 50% 40%, rgba(120,160,255,.10), transparent 65%),
+      radial-gradient(50% 25% at 80% 55%, rgba(255,180,0,.09), transparent 60%),
+      repeating-linear-gradient(90deg, rgba(255,255,255,.06) 0 2px, transparent 2px 18px);
+    filter: blur(1.2px);
+    opacity:.25;
+    transform: translateX(0);
+    animation: drift 10s linear infinite;
+    mix-blend-mode: screen;
+  }
+  .wave.w2{
+    bottom:-18%;
+    opacity:.18;
+    animation-duration: 16s;
+    filter: blur(1.7px);
+  }
+  @keyframes drift{ 0%{transform:translateX(0)} 100%{transform:translateX(-10%)} }
+
+  /* Layout */
+  .stage{
+    position:relative;
+    height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:22px;
+  }
+  .shell{
+    width:min(1100px,100%);
+    display:grid;
+    grid-template-columns: 1.2fr .85fr;
+    gap:18px;
+    align-items:stretch;
+  }
+  @media (max-width: 940px){ .shell{grid-template-columns:1fr;} }
+
+  .card{
+    position:relative;
+    border:1px solid var(--border);
+    border-radius:var(--r);
+    background: var(--panel);
+    box-shadow: var(--shadow);
+    overflow:hidden;
+  }
+  .card::before{
+    content:"";
+    position:absolute; inset:-2px;
+    background: radial-gradient(500px 220px at 15% 0%, rgba(255,165,0,.14), transparent 55%);
+    pointer-events:none;
+  }
+  .left{ padding:22px 22px 18px; }
+  h1{ margin:0 0 10px; font-size:34px; letter-spacing:-.5px; position:relative; z-index:1;}
+  p{ margin:0 0 12px; color:var(--muted); line-height:1.55; position:relative; z-index:1;}
+  .hint{ font-size:12px; color:rgba(234,234,242,.58); position:relative; z-index:1;}
+  .replay{
+    margin-top:10px;
+    font-size:12px;
+    color:rgba(234,234,242,.60);
+    cursor:pointer;
+    text-decoration:underline;
+    width:max-content;
+    position:relative; z-index:1;
+    display:none;
+  }
+
+  /* Right side: old WP box */
+  .right{ padding:0; min-height:440px; }
+  .wphead{
+    padding:12px 14px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    border-bottom:1px solid rgba(255,255,255,.10);
+    background:rgba(0,0,0,.18);
+    font-size:12px;
+    color:rgba(234,234,242,.78);
+  }
+  .wphead strong{ color:rgba(234,234,242,.94); font-weight:650; }
+  .wpbody{ position:relative; padding:14px; height: calc(100% - 45px); }
+
+  .formbox{
+    position:relative;
+    height:100%;
+    border:1px solid rgba(255,255,255,.12);
+    border-radius:16px;
+    background:rgba(255,255,255,.04);
+    overflow:hidden;
+    transform-origin: 50% 50%;
+  }
+  .forminner{ padding:16px; }
+  .row{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  @media (max-width: 520px){ .row{grid-template-columns:1fr;} }
+  input, textarea{
+    width:100%;
+    background: rgba(0,0,0,.18);
+    border:1px solid rgba(255,255,255,.10);
+    color:var(--text);
+    padding:11px 12px;
+    border-radius:12px;
+    outline:none;
+    font-size:14px;
+  }
+  textarea{ min-height:120px; resize:vertical; }
+  .btn{
+    margin-top:10px;
+    width:100%;
+    padding:12px 14px;
+    border:none;
+    border-radius:12px;
+    background: linear-gradient(180deg, rgba(255,165,0,.95), rgba(255,122,24,.95));
+    color:#0b0b0f;
+    font-weight:800;
+    cursor:pointer;
+  }
+
+  /* Long shredding effect layer */
+  .shred{
+    position:absolute; inset:0;
+    pointer-events:none;
+    opacity:0;
+  }
+  .grain{
+    position:absolute; inset:0;
+    background:
+      repeating-linear-gradient(0deg, rgba(255,255,255,.06) 0 1px, transparent 1px 7px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,.04) 0 1px, transparent 1px 9px);
+    mix-blend-mode: screen;
+    opacity:.35;
+  }
+  .tearband{
+    position:absolute;
+    left:-30%;
+    width:160%;
+    height:18px;
+    border-radius:999px;
+    background: linear-gradient(90deg, transparent, rgba(255,165,0,.95), rgba(255,255,255,.85), rgba(255,165,0,.95), transparent);
+    filter: blur(.3px);
+    opacity:0;
+    transform: rotate(-10deg) translateY(0) scaleX(.9);
+  }
+
+  /* Monster (tech/mech silhouette) */
+  .monster{
+    position:absolute;
+    width:190px;
+    height:190px;
+    right:18px;
+    bottom:18px;
+    opacity:0;
+    transform: translateY(34px) scale(.86);
+    transition: opacity .35s ease, transform .35s ease;
+    pointer-events:none;
+    filter: drop-shadow(0 18px 35px rgba(0,0,0,.65));
+    background-repeat:no-repeat;
+    background-size:contain;
+    background-position:center;
+  }
+
+  /* Angular stealth-bomber-mech silhouette (inline SVG) */
+  .monster.tech-shape{
+    background-image:url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 220'>\
+<path fill='%23000000' d='M40 150 L55 98 L95 70 L100 50 L120 38 L140 50 L145 70 L185 98 L200 150 L165 160 L150 145 L135 165 L110 172 L85 165 L70 145 L55 160 Z'/>\
+<path fill='%23000000' d='M92 112 L110 98 L128 112 L110 126 Z'/>\
+<path fill='%23000000' d='M75 92 L58 82 L62 68 L82 78 Z'/>\
+<path fill='%23000000' d='M145 92 L138 78 L158 68 L162 82 Z'/>\
+<path fill='%23000000' d='M132 40 L160 28 L165 42 L140 54 Z'/>\
+</svg>");
+  }
+
+  /* Bird silhouette */
+  .monster.bird-shape{
+    background-image:url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 140'>\
+<path fill='%23000000' d='M10,80 C40,40 80,45 110,70 C135,45 175,40 210,80 C180,65 150,70 130,95 C120,105 110,110 110,110 C110,110 100,105 90,95 C70,70 40,65 10,80 Z'/>\
+</svg>");
+  }
+
+  /* AI reveal panel */
+  .ai{
+    position:absolute;
+    inset:14px;
+    border-radius:16px;
+    background: rgba(15,23,42,.92);
+    border:1px solid rgba(255,255,255,.14);
+    box-shadow: 0 0 40px rgba(255,165,0,.10);
+    padding:18px;
+    opacity:0;
+    transform: scale(.95);
+    transition: opacity .55s ease, transform .55s ease;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+  }
+  .ai h2{margin:0 0 8px; font-size:20px}
+  .ai p{margin:0; color:rgba(234,234,242,.74); font-size:13px}
+  .ai .cta{ display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
+  .chip{
+    padding:10px 12px;
+    border-radius:999px;
+    border:1px solid rgba(255,255,255,.12);
+    background: rgba(0,0,0,.18);
+    color:rgba(234,234,242,.85);
+    font-size:12px;
+  }
+  .talk{
+    margin-top:14px;
+    width:100%;
+    padding:12px 14px;
+    border-radius:12px;
+    border:none;
+    background: rgba(255,165,0,.95);
+    color:#0b0b0f;
+    font-weight:850;
+    cursor:pointer;
+  }
+
+  /* Effects */
+  .shake{ animation: shake .35s ease-in-out 0s 3; }
+  @keyframes shake{
+    0%{ transform: translate(0,0) }
+    25%{ transform: translate(2px,-2px) }
+    50%{ transform: translate(-2px,2px) }
+    75%{ transform: translate(2px,1px) }
+    100%{ transform: translate(0,0) }
+  }
+
+  .implode{ animation: implode .95s ease forwards; }
+  @keyframes implode{
+    0%{ transform: scale(1) rotate(0deg); opacity:1; filter: blur(0px); }
+    55%{ transform: scale(.92) rotate(-1.2deg); opacity:.65; filter: blur(.4px); }
+    100%{ transform: scale(.58) rotate(6deg); opacity:0; filter: blur(1.4px); }
+  }
+
+  /* 5+ seconds of shred: bands keep slashing */
+  .shredOn .shred{ opacity:1; }
+  .shredOn .tearband{ animation: band 1.05s ease forwards; }
+  @keyframes band{
+    0%{ opacity:0; transform: rotate(-10deg) translateY(50px) scaleX(.85); }
+    20%{ opacity:1; }
+    100%{ opacity:0; transform: rotate(-10deg) translateY(-120px) scaleX(1.15); }
+  }
+
+  /* Bird fly-away over ocean */
+  .fly{
+    transition: transform 1.8s ease, opacity 1.8s ease;
+    transform: translate(520px,-300px) scale(.62) rotate(10deg) !important;
+    opacity: 0 !important;
+  }
+</style>
+</head>
+
+<body>
+  <div class="bg">
+    <div class="sun"></div>
+    <div class="haze"></div>
+    <div class="horizon"></div>
+    <div class="ocean">
+      <div class="wave"></div>
+      <div class="wave w2"></div>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="shell">
+      <section class="card left">
+        <h1>Customer Care AI</h1>
+        <p>Click <b>Submit</b>. You’ll get ~5+ seconds of shredding/tearing… then the clean AI experience reveals behind it.</p>
+        <p class="hint">Standalone cinematic demo. No backend. Works immediately.</p>
+        <div class="replay" id="replay">Replay scene</div>
+      </section>
+
+      <aside class="card right">
+        <div class="wphead">
+          <strong>Website Contact Box</strong>
+          <span>Old-school template</span>
+        </div>
+
+        <div class="wpbody">
+          <div class="formbox" id="formbox">
+            <div class="shred" id="shred">
+              <div class="grain"></div>
+              <!-- tear bands are inserted by JS for 5+ seconds -->
+            </div>
+
+            <div class="forminner" id="forminner">
+              <div class="row">
+                <input placeholder="First name" />
+                <input placeholder="Last name" />
+              </div>
+              <div class="row" style="margin-top:10px;">
+                <input placeholder="Email address" />
+                <input placeholder="Phone number" />
+              </div>
+              <textarea style="margin-top:10px;" placeholder="Message"></textarea>
+              <button class="btn" id="submitBtn">Submit</button>
+            </div>
+
+            <div class="ai" id="ai">
+              <div>
+                <h2>Customer Care AI</h2>
+                <p>Stop typing. Start speaking. Leads, bookings, quotes, support — handled conversationally.</p>
+                <div class="cta">
+                  <div class="chip">Auto</div>
+                  <div class="chip">Dental</div>
+                  <div class="chip">Legal</div>
+                  <div class="chip">Chiro</div>
+                  <div class="chip">Tires</div>
+                </div>
+              </div>
+              <div>
+                <button class="talk" id="talkBtn">🎙️ Talk to Me</button>
+                <div class="hint" style="margin-top:10px;">(Browser speech demo — no server required.)</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="monster tech-shape" id="monster"></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+<script>
+  const submitBtn = document.getElementById("submitBtn");
+  const formbox   = document.getElementById("formbox");
+  const forminner = document.getElementById("forminner");
+  const ai        = document.getElementById("ai");
+  const monster   = document.getElementById("monster");
+  const replay    = document.getElementById("replay");
+  const talkBtn   = document.getElementById("talkBtn");
+  const shred     = document.getElementById("shred");
+
+  function speak(text){
+    try{
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = "en-US";
+      u.rate = 1.0;
+      u.pitch = 1.0;
+      window.speechSynthesis.speak(u);
+    }catch(e){}
+  }
+
+  function clearBands(){
+    // remove prior tear bands (keep grain)
+    [...shred.querySelectorAll(".tearband")].forEach(n => n.remove());
+  }
+
+  function spawnBand(delayMs){
+    const b = document.createElement("div");
+    b.className = "tearband";
+    b.style.top = (30 + Math.random()*40) + "%";
+    b.style.animationDelay = (delayMs/1000).toFixed(2) + "s";
+    shred.appendChild(b);
+  }
+
+  function resetScene(){
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Submit";
+    replay.style.display = "none";
+
+    formbox.classList.remove("shake","shredOn");
+    forminner.classList.remove("implode");
+
+    ai.style.opacity = 0;
+    ai.style.transform = "scale(.95)";
+
+    monster.className = "monster tech-shape";
+    monster.style.opacity = 0;
+    monster.style.transform = "translateY(34px) scale(.86)";
+
+    clearBands();
+  }
+
+  function playScene(){
+    resetScene();
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Working…";
+
+    // Monster rises in (stealth/mech presence)
+    monster.style.opacity = 1;
+    monster.style.transform = "translateY(0) scale(1)";
+
+    // Start shredding: 5.4 seconds worth of bands
+    // We'll spawn bands every 300ms -> 18 bands -> 5.4s
+    clearBands();
+    formbox.classList.add("shredOn");
+    for (let i=0; i<18; i++){
+      spawnBand(i * 300);
+    }
+
+    // Add shake bursts during the shred
+    const shakeTimes = [650, 1450, 2350, 3250, 4150];
+    shakeTimes.forEach(t => setTimeout(()=> formbox.classList.add("shake"), t));
+    shakeTimes.forEach(t => setTimeout(()=> formbox.classList.remove("shake"), t + 420));
+
+    // Collapse the form after shred completes (~5.4s)
+    setTimeout(()=>{
+      forminner.classList.add("implode");
+    }, 5600);
+
+    // Reveal the clean page behind shortly after collapse
+    setTimeout(()=>{
+      ai.style.opacity = 1;
+      ai.style.transform = "scale(1)";
+      speak("Relax. I’ve got this. No forms. Just speak naturally. Customer Care A I is here.");
+    }, 6350);
+
+    // Monster morphs to bird
+    setTimeout(()=>{
+      monster.classList.remove("tech-shape");
+      monster.classList.add("bird-shape");
+      monster.style.transform = "translateY(-10px) scale(.92)";
+    }, 7250);
+
+    // Bird flies away over the ocean into sunset
+    setTimeout(()=>{
+      monster.classList.add("fly");
+    }, 7700);
+
+    // Done
+    setTimeout(()=>{
+      replay.style.display = "block";
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Submit";
+    }, 9500);
+  }
+
+  submitBtn.addEventListener("click", playScene);
+  replay.addEventListener("click", playScene);
+
+  talkBtn.addEventListener("click", ()=>{
+    speak("Hi. Tell me what you need. I can take your details, book an appointment, or give you a quote. No typing required.");
+  });
+</script>
+</body>
+</html>
