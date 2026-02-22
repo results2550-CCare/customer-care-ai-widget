@@ -1,388 +1,768 @@
-<!doctype html>
+     <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="theme-color" content="#0b0b0f" />
-  <title>Customer Care AI — Voice Demo</title>
-
+  <meta name="theme-color" content="#070910" />
+  <title>Customer Care AI — Hands-Free Voice + WOW</title>
   <style>
     :root{
-      --bg:#0b0b0f;
-      --panel:rgba(20,22,30,.72);
-      --border:rgba(255,255,255,.14);
-      --text:#e9e9ee;
-      --muted:rgba(233,233,238,.72);
-      --accent:#ffa500;
-      --shadow:0 22px 60px rgba(0,0,0,.55);
-      --radius:22px;
-      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Helvetica Neue", Helvetica;
+      --bg0:#05060a; --bg1:#081022; --bg2:#0b1a3a;
+      --txt: rgba(255,255,255,.92); --muted: rgba(255,255,255,.72);
+      --stroke: rgba(255,255,255,.14);
+      --accent:#ff8a00; --accent2:#ffd36a; --green:#56ff7a;
+      --shadow: 0 30px 90px rgba(0,0,0,.55);
+      --glass: rgba(255,255,255,.06);
     }
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
-      margin:0;
-      font-family:var(--font);
+      margin:0; color:var(--txt);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", sans-serif;
       background:
-        radial-gradient(1200px 800px at 70% 20%, rgba(255,165,0,.10), transparent 55%),
-        radial-gradient(900px 600px at 20% 80%, rgba(120,200,255,.08), transparent 55%),
-        var(--bg);
-      color:var(--text);
+        radial-gradient(900px 500px at 30% 15%, rgba(255,138,0,.18), transparent 60%),
+        radial-gradient(900px 500px at 70% 20%, rgba(70,140,255,.12), transparent 60%),
+        radial-gradient(900px 600px at 50% 90%, rgba(0,255,170,.08), transparent 60%),
+        linear-gradient(180deg, var(--bg0), var(--bg1) 45%, var(--bg2));
       overflow-x:hidden;
     }
-    .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:40px 18px;}
-    .stage{width:min(1100px, 100%);display:grid;grid-template-columns: 1.2fr .8fr;gap:22px;align-items:stretch;}
-    @media (max-width: 920px){ .stage{grid-template-columns:1fr;} }
 
-    .card{
-      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
-      border:1px solid var(--border);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      padding:26px;
-      position:relative;
-      overflow:hidden;
+    /* FULLSCREEN "ONE TAP" START OVERLAY */
+    .gate{
+      position:fixed; inset:0; z-index:9999;
+      display:flex; align-items:center; justify-content:center;
+      background: rgba(0,0,0,.72);
+      backdrop-filter: blur(10px);
     }
-    .card::before{
-      content:"";
-      position:absolute; inset:-2px;
-      background: radial-gradient(500px 220px at 20% 0%, rgba(255,165,0,.18), transparent 55%);
+    .gate.hidden{display:none}
+    .gateCard{
+      width:min(760px, 92vw);
+      border:1px solid rgba(255,255,255,.16);
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+      box-shadow: var(--shadow);
+      border-radius:22px;
+      padding:22px;
+      text-align:center;
+    }
+    .gateCard h1{margin:0 0 10px; font-size:28px}
+    .gateCard p{margin:0 0 14px; color:var(--muted); line-height:1.35}
+    .gateBtn{
+      appearance:none; border:0; cursor:pointer;
+      padding:14px 16px; border-radius:16px;
+      background: linear-gradient(180deg, var(--accent2), var(--accent));
+      color:#1a1206; font-weight:950; letter-spacing:.2px;
+      width:min(360px, 100%);
+      box-shadow:0 12px 32px rgba(255,138,0,.28);
+    }
+    .gateNote{margin-top:10px; font-size:12px; color:rgba(255,255,255,.62)}
+
+    .wrap{min-height:100%; display:flex; align-items:center; justify-content:center; padding:26px 16px 44px;}
+    .stage{
+      width:min(1100px, 96vw);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:22px;
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      position:relative;
+    }
+    .topbar{padding:20px 20px 12px; display:flex; justify-content:space-between; gap:14px; flex-wrap:wrap;}
+    .topbar h2{margin:0; font-size:28px}
+    .topbar .sub{margin:6px 0 0; color:var(--muted); max-width:72ch; line-height:1.35}
+    .badges{display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:flex-end}
+    .pill{
+      display:inline-flex; gap:8px; align-items:center;
+      padding:8px 12px; border-radius:999px;
+      background: rgba(0,0,0,.18);
+      border:1px solid rgba(255,255,255,.12);
+      color:rgba(255,255,255,.82); font-size:13px;
+      user-select:none;
+    }
+    .dot{width:9px;height:9px;border-radius:50%; background:var(--accent); box-shadow:0 0 18px rgba(255,138,0,.55);}
+    .dotG{width:9px;height:9px;border-radius:50%; background:rgba(255,255,255,.35);}
+    .dotG.on{background:var(--green); box-shadow:0 0 18px rgba(86,255,122,.45);}
+
+    .grid{display:grid; grid-template-columns: 1.05fr .95fr; gap:14px; padding:14px 20px 22px;}
+    @media (max-width: 900px){ .grid{grid-template-columns:1fr} }
+
+    .panel{
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.18);
+      border-radius:18px;
+      overflow:hidden;
+      position:relative;
+      min-height: 480px;
+    }
+    .panelHd{
+      padding:12px 14px;
+      display:flex; justify-content:space-between; align-items:center;
+      border-bottom:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      font-weight:900; letter-spacing:.2px;
+    }
+    .panelBd{padding:14px; position:relative;}
+
+    /* boring form */
+    .formbox{
+      border-radius:16px;
+      background: rgba(255,255,255,.04);
+      border:1px dashed rgba(255,255,255,.22);
+      padding:16px; overflow:hidden;
+      transform-origin:center;
+    }
+    .field{
+      height:46px; border-radius:12px;
+      background: rgba(0,0,0,.20);
+      border:1px solid rgba(255,255,255,.10);
+      margin:12px 0; display:flex; align-items:center;
+      padding:0 14px; color:rgba(255,255,255,.55);
+    }
+    .field.big{height:112px; align-items:flex-start; padding-top:12px}
+    .btnFake{
+      margin-top:14px; height:54px; border-radius:14px; border:0;
+      background: linear-gradient(180deg, var(--accent2), var(--accent));
+      color:#1a1206; font-weight:950; font-size:16px; letter-spacing:.3px;
+      width:100%; box-shadow:0 12px 32px rgba(255,138,0,.28);
+    }
+
+    /* reveal / widget */
+    .reveal{
+      position:absolute; inset:14px; z-index:20;
+      opacity:0; transform: translateY(12px);
+      transition: opacity .65s ease, transform .65s ease;
       pointer-events:none;
     }
-    h1{margin:0 0 10px;font-size:38px;letter-spacing:-.6px;position:relative;z-index:1;}
-    p{margin:0;color:var(--muted);line-height:1.5;font-size:15px;position:relative;z-index:1;}
-
-    .pillrow{margin-top:16px;display:flex;flex-wrap:wrap;gap:10px;position:relative;z-index:1;}
-    .pill{
-      border:1px solid var(--border);
-      background:rgba(0,0,0,.25);
-      padding:8px 10px;
-      border-radius:999px;
-      font-size:12px;
-      color:rgba(233,233,238,.82);
-      display:flex; gap:8px; align-items:center;
-    }
-    .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 18px rgba(255,165,0,.55);}
-    .footerhint{margin-top:14px;font-size:12px;color:rgba(233,233,238,.60);}
-
-    /* “Boring WP box” on the right */
-    .dock{position:relative;min-height:460px;padding:0;}
-    .wpbox{
-      border-radius:var(--radius);
-      border:1px solid var(--border);
-      background:rgba(0,0,0,.22);
-      height:100%;
+    .reveal.on{opacity:1; transform: translateY(0); pointer-events:auto;}
+    .cleanCard{
+      border-radius:18px; border:1px solid rgba(255,255,255,.14);
+      background: rgba(12,18,35,.60);
+      box-shadow: 0 22px 60px rgba(0,0,0,.45);
       overflow:hidden;
-      position:relative;
     }
-    .wphead{
-      padding:12px 14px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
+    .cleanHd{
+      padding:12px 14px; display:flex; align-items:center; justify-content:space-between;
       border-bottom:1px solid rgba(255,255,255,.10);
-      background:rgba(0,0,0,.22);
-      font-size:12px;
-      color:rgba(233,233,238,.78);
+      background: rgba(255,255,255,.05);
+      font-weight:950;
     }
-    .wphead strong{color:rgba(233,233,238,.92); font-weight:600}
-    .wpbody{padding:14px;height:calc(100% - 45px);}
+    .cleanBd{padding:14px; color:rgba(255,255,255,.80); line-height:1.35;}
 
-    /* Chat UI */
-    .chatShell{
-      height:100%;
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-    }
-    .chatLog{
-      flex:1;
-      overflow:auto;
-      padding:12px;
+    .widget{
+      margin-top:12px;
       border-radius:16px;
-      border:1px solid rgba(255,255,255,.10);
-      background:rgba(0,0,0,.25);
+      border:1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.22);
+      overflow:hidden;
     }
-    .msg{margin:0 0 10px;display:flex;gap:10px;}
-    .tag{
-      min-width:44px;
-      font-size:11px;
-      color:rgba(233,233,238,.75);
-      padding-top:3px;
-    }
-    .bubble{
+    .widgetTop{
       padding:10px 12px;
-      border-radius:14px;
-      border:1px solid rgba(255,255,255,.10);
-      background:rgba(255,255,255,.05);
-      color:rgba(233,233,238,.92);
-      font-size:14px;
-      line-height:1.35;
-      max-width: 100%;
-      white-space:pre-wrap;
-      word-break:break-word;
+      display:flex; align-items:center; justify-content:space-between;
+      border-bottom:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      gap:10px; flex-wrap:wrap;
     }
-    .bubble.you{
-      border-color: rgba(255,165,0,.35);
-      background: rgba(255,165,0,.08);
+    .widgetTitle{display:flex; align-items:center; gap:10px; font-weight:950;}
+    .orb{
+      width:14px; height:14px; border-radius:999px;
+      background: radial-gradient(circle at 30% 30%, #fff, var(--accent) 40%, rgba(255,138,0,.25) 70%);
+      box-shadow: 0 0 22px rgba(255,138,0,.35);
+    }
+    .widgetBody{padding:12px}
+    .log{
+      height:220px; overflow:auto;
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:14px;
+      background: rgba(0,0,0,.18);
+      padding:10px;
+      font-size:13px; line-height:1.35;
+      color:rgba(255,255,255,.84);
+      white-space:pre-wrap;
+    }
+    .m{margin:8px 0}
+    .muted{color:rgba(255,255,255,.62)}
+    .statusline{
+      margin-top:10px;
+      font-size:12px;
+      color:rgba(255,255,255,.70);
+      display:flex; gap:10px; flex-wrap:wrap;
+    }
+    .chip{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:6px 10px; border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.18);
+    }
+    .sDot{width:8px;height:8px;border-radius:50%; background:rgba(255,255,255,.35);}
+    .chip.on .sDot{background:var(--green); box-shadow:0 0 16px rgba(86,255,122,.55);}
+
+    /* WOW shredding */
+    .shredLayer{position:absolute; inset:-10%; display:none; z-index:35; pointer-events:none;}
+    .shredLayer.active{display:block}
+    .strip{
+      position:absolute; height:16px; width:140%; left:-20%;
+      border-radius:999px;
+      background: linear-gradient(90deg, rgba(0,0,0,0), rgba(86,255,122,.95), rgba(255,255,255,.9), rgba(86,255,122,.95), rgba(0,0,0,0));
+      opacity:0;
+      transform: rotate(var(--rot)) translateY(var(--y));
+      box-shadow:0 0 26px rgba(86,255,122,.45);
+    }
+    .debris{position:absolute; inset:0; z-index:38; pointer-events:none; display:none;}
+    .debris.active{display:block}
+    .debris .chip2{
+      position:absolute; width:14px; height:10px; border-radius:3px;
+      background: rgba(255,255,255,.78); opacity:0;
+    }
+    .monster{
+      position:absolute; width:min(520px, 88vw); height:min(520px, 88vw);
+      left:50%; top:66%;
+      transform: translate(-50%,-50%) scale(.35);
+      opacity:0; z-index:40; pointer-events:none;
+      filter: drop-shadow(0 30px 50px rgba(0,0,0,.65));
+    }
+    .claws{
+      position:absolute; width:min(560px, 92vw); height:min(560px, 92vw);
+      left:50%; top:64%;
+      transform: translate(-50%,-50%) scale(.35);
+      opacity:0; z-index:41; pointer-events:none;
+      filter: drop-shadow(0 18px 40px rgba(0,0,0,.55));
+    }
+    .bird{
+      position:absolute; width:120px; height:120px;
+      right:-40px; top:44%;
+      opacity:0; z-index:45; pointer-events:none;
+      transform: rotate(-10deg) scale(.8);
+      filter: drop-shadow(0 18px 30px rgba(0,0,0,.55));
     }
 
-    .controls{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:10px;
+    @keyframes monsterIn{
+      0%{opacity:0; transform: translate(-50%,-50%) scale(.20) rotate(-6deg);}
+      25%{opacity:1;}
+      55%{transform: translate(-50%,-55%) scale(.85) rotate(2deg);}
+      100%{opacity:1; transform: translate(-50%,-52%) scale(.95) rotate(0deg);}
     }
-    button{
-      border:none;
-      border-radius:14px;
-      padding:12px 12px;
-      font-weight:700;
-      cursor:pointer;
-      background:#f97316;
-      color:#0b0b0f;
+    @keyframes clawsIn{
+      0%{opacity:0; transform: translate(-50%,-50%) scale(.15) rotate(10deg);}
+      30%{opacity:1;}
+      60%{transform: translate(-50%,-52%) scale(.95) rotate(-3deg);}
+      100%{opacity:1; transform: translate(-50%,-50%) scale(1.0) rotate(0deg);}
     }
-    button.secondary{
-      background: rgba(255,255,255,.08);
-      color: rgba(233,233,238,.92);
-      border:1px solid rgba(255,255,255,.14);
+    @keyframes slam{0%{transform:scale(1)}50%{transform:scale(.985) rotate(-.3deg)}100%{transform:scale(1)}}
+    @keyframes stripSlash{
+      0%{opacity:0; transform: rotate(var(--rot)) translateY(var(--y)) translateX(-40px) scaleX(.8);}
+      15%{opacity:1;}
+      80%{opacity:1;}
+      100%{opacity:0; transform: rotate(var(--rot)) translateY(var(--y)) translateX(240px) scaleX(1.05);}
     }
-    button:disabled{opacity:.55;cursor:not-allowed}
-    .status{
-      font-size:12px;
-      color:rgba(233,233,238,.70);
-      margin-top:6px;
+    @keyframes chipFly{
+      0%{opacity:0; transform: translate3d(0,0,0) rotate(0deg) scale(1);}
+      10%{opacity:1;}
+      100%{opacity:0; transform: translate3d(var(--dx), var(--dy), 0) rotate(var(--dr)) scale(.85);}
     }
-    .mini{
-      display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;
+    @keyframes formShred{
+      0%{transform:scale(1) rotate(0); opacity:1; filter:none;}
+      25%{transform:scale(.995) rotate(-.2deg); filter:contrast(1.2) saturate(1.1);}
+      60%{transform:scale(.985) rotate(.25deg);}
+      100%{transform:scale(.92) rotate(-.6deg); opacity:0; filter:blur(2px);}
     }
-    .mini input{
-      flex:1;
-      min-width: 150px;
-      padding:10px 12px;
-      border-radius:12px;
-      border:1px solid rgba(255,255,255,.12);
-      background:rgba(0,0,0,.22);
-      color:rgba(233,233,238,.92);
-      outline:none;
+    @keyframes birdFly{
+      0%{opacity:0; transform: translate3d(0,0,0) rotate(-10deg) scale(.8);}
+      10%{opacity:1;}
+      100%{opacity:0; transform: translate3d(-540px,-240px,0) rotate(-22deg) scale(.6);}
     }
-    .mini input::placeholder{color:rgba(233,233,238,.45)}
-    .smallBtn{
-      padding:10px 12px;
-      border-radius:12px;
-      background:rgba(255,255,255,.10);
-      color:rgba(233,233,238,.92);
-      border:1px solid rgba(255,255,255,.14);
-      font-weight:700;
+
+    @media (prefers-reduced-motion: reduce){
+      *{animation:none!important; transition:none!important}
+      .reveal{opacity:1; transform:none}
     }
   </style>
 </head>
 
 <body>
-  <div class="wrap">
-    <div class="stage">
-      <section class="card">
-        <h1>Customer Care AI</h1>
-        <p>
-          Voice-first demo: speak a question, get a response back in text and voice.
-          This is the “engine” build. Cinematic/monster layer comes after it’s stable.
-        </p>
-
-        <div class="pillrow">
-          <div class="pill"><span class="dot"></span> Speech input</div>
-          <div class="pill"><span class="dot"></span> Spoken reply</div>
-          <div class="pill"><span class="dot"></span> Lead capture</div>
-        </div>
-
-        <div class="footerhint">
-          If speech doesn’t play on first load, tap “Enable Voice” once (browser permission).
-        </div>
-      </section>
-
-      <aside class="card dock">
-        <div class="wpbox">
-          <div class="wphead">
-            <strong>Contact Box</strong>
-            <span>Customer Care AI Widget</span>
-          </div>
-          <div class="wpbody">
-            <div class="chatShell">
-              <div class="chatLog" id="chatLog"></div>
-
-              <div class="controls">
-                <button id="btnTalk">🎤 Talk</button>
-                <button class="secondary" id="btnEnable">🔊 Enable Voice</button>
-              </div>
-
-              <div class="mini">
-                <input id="textInput" placeholder="Optional: type here if needed…" />
-                <button class="smallBtn" id="btnSend">Send</button>
-              </div>
-
-              <div class="status" id="status">Status: ready.</div>
-            </div>
-          </div>
-        </div>
-      </aside>
+  <!-- One-tap start overlay (only shows if auto-start fails) -->
+  <div class="gate" id="gate">
+    <div class="gateCard">
+      <h1>Start Voice Demo</h1>
+      <p>Tap once. Accept the mic prompt. After that it runs hands-free: listen → send → reply → listen…</p>
+      <button class="gateBtn" id="gateBtn" type="button">Start</button>
+      <div class="gateNote">If you already allowed mic before, this tap still starts the voice engine.</div>
     </div>
   </div>
 
-<script>
-(() => {
-  const log = document.getElementById('chatLog');
-  const statusEl = document.getElementById('status');
-  const btnTalk = document.getElementById('btnTalk');
-  const btnEnable = document.getElementById('btnEnable');
-  const textInput = document.getElementById('textInput');
-  const btnSend = document.getElementById('btnSend');
+  <div class="wrap">
+    <div class="stage" id="stage">
+      <div class="topbar">
+        <div>
+          <h2>Customer Care AI</h2>
+          <div class="sub">Hands-free voice loop + WOW shred demo. No “tap to talk” every time.</div>
+        </div>
+        <div class="badges">
+          <span class="pill"><span class="dot"></span> Auto greeting</span>
+          <span class="pill"><span class="dot"></span> Auto listen loop</span>
+          <span class="pill"><span class="dotG" id="micDot"></span> <span id="micTxt">Mic: idle</span></span>
+        </div>
+      </div>
 
-  // --- Utilities ---
-  function setStatus(t){ statusEl.textContent = "Status: " + t; }
-  function addMsg(who, text){
-    const row = document.createElement('div');
-    row.className = 'msg';
-    const tag = document.createElement('div');
-    tag.className = 'tag';
-    tag.textContent = who;
-    const bubble = document.createElement('div');
-    bubble.className = 'bubble' + (who === 'You' ? ' you' : '');
-    bubble.textContent = text;
-    row.appendChild(tag);
-    row.appendChild(bubble);
-    log.appendChild(row);
-    log.scrollTop = log.scrollHeight;
-  }
+      <div class="grid">
+        <div class="panel">
+          <div class="panelHd">Voice Engine <span style="color:rgba(255,255,255,.70);font-weight:800;">hands-free</span></div>
+          <div class="panelBd">
+            <div class="cleanCard" style="padding:0;">
+              <div class="cleanHd">
+                <span style="display:flex;align-items:center;gap:10px;"><span class="orb"></span> Voice Agent</span>
+                <span style="color:rgba(255,255,255,.70);font-weight:800;">/api/chat</span>
+              </div>
+              <div class="cleanBd">
+                Speak normally. It will auto-send after you stop talking.
+                <div class="widget">
+                  <div class="widgetTop">
+                    <div class="widgetTitle"><span class="orb"></span> Conversation</div>
+                    <div class="statusline">
+                      <span class="chip" id="chipListen"><span class="sDot"></span> listening</span>
+                      <span class="chip" id="chipThink"><span class="sDot"></span> thinking</span>
+                      <span class="chip" id="chipSpeak"><span class="sDot"></span> speaking</span>
+                    </div>
+                  </div>
+                  <div class="widgetBody">
+                    <div class="log" id="log"></div>
+                    <div class="muted" style="margin-top:10px;font-size:12px;">
+                      If your browser doesn’t support speech recognition, this page will still load but won’t listen.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-  // --- Speech output ---
-  function canSpeak(){
-    return typeof window.speechSynthesis !== 'undefined' && typeof window.SpeechSynthesisUtterance !== 'undefined';
-  }
+        <div class="panel" id="rightPanel">
+          <div class="panelHd">Old Website Form <span style="color:rgba(255,255,255,.70);font-weight:800;">gets destroyed</span></div>
+          <div class="panelBd" id="panelBody">
+            <div class="formbox" id="formBox">
+              <div class="field">First name</div>
+              <div class="field">Last name</div>
+              <div class="field">Email address</div>
+              <div class="field">Phone number</div>
+              <div class="field big">Message</div>
+              <button class="btnFake" type="button" id="fakeSubmit">Submit</button>
+            </div>
 
-  function speak(text){
-    if(!canSpeak()) return;
-    // Cancel any queued speech so it doesn't overlap.
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'en-US';
-    u.rate = 1.0;
-    u.pitch = 1.0;
-    window.speechSynthesis.speak(u);
-  }
+            <div class="reveal" id="revealRight" aria-hidden="true">
+              <div class="cleanCard">
+                <div class="cleanHd">
+                  No Forms. Just Talk.
+                  <span style="color:rgba(255,255,255,.70);font-weight:800;">Customer Care AI</span>
+                </div>
+                <div class="cleanBd">
+                  The boring box is gone. Voice-only = faster leads.
+                </div>
+              </div>
+            </div>
 
-  // Some browsers require a user gesture to "unlock" audio.
-  function enableVoice(){
-    if(!canSpeak()){
-      addMsg('System', 'Speech synthesis not available on this browser/device.');
-      return;
+            <div class="debris" id="debris"></div>
+            <div class="shredLayer" id="shredLayer">
+              <div class="strip" style="--rot:-12deg; --y:40px;"></div>
+              <div class="strip" style="--rot:10deg;  --y:120px;"></div>
+              <div class="strip" style="--rot:-8deg;  --y:200px;"></div>
+              <div class="strip" style="--rot:16deg;  --y:280px;"></div>
+              <div class="strip" style="--rot:-14deg; --y:330px;"></div>
+            </div>
+
+            <svg class="monster" id="monster" viewBox="0 0 500 500" aria-hidden="true">
+              <defs>
+                <linearGradient id="mG" x1="0" x2="1">
+                  <stop offset="0" stop-color="#0b0f18"/>
+                  <stop offset="0.55" stop-color="#0a0c14"/>
+                  <stop offset="1" stop-color="#070912"/>
+                </linearGradient>
+                <linearGradient id="glow" x1="0" x2="1">
+                  <stop offset="0" stop-color="rgba(86,255,122,.0)"/>
+                  <stop offset=".5" stop-color="rgba(86,255,122,.55)"/>
+                  <stop offset="1" stop-color="rgba(86,255,122,.0)"/>
+                </linearGradient>
+              </defs>
+              <path d="M250 55c75 0 130 40 150 95 26 70-6 162-55 220-42 49-83 75-140 75-57 0-98-26-140-75-49-58-81-150-55-220 20-55 75-95 150-95z"
+                    fill="rgba(0,0,0,.20)" stroke="rgba(255,255,255,.10)" stroke-width="6"/>
+              <path d="M120 245c10-75 65-140 130-150 68-10 125 32 150 90 18 42 12 92-10 130-20 36-46 60-78 73-44 18-94 16-132-8-41-26-70-70-60-135z"
+                    fill="url(#mG)" stroke="rgba(255,255,255,.08)" stroke-width="4"/>
+              <path d="M210 115l-34-48 60 20z" fill="#070a12" stroke="rgba(255,255,255,.08)" stroke-width="3"/>
+              <path d="M290 115l34-48-60 20z" fill="#070a12" stroke="rgba(255,255,255,.08)" stroke-width="3"/>
+              <ellipse cx="205" cy="220" rx="18" ry="10" fill="rgba(86,255,122,.92)"/>
+              <ellipse cx="295" cy="220" rx="18" ry="10" fill="rgba(86,255,122,.92)"/>
+              <path d="M155 220h190" stroke="url(#glow)" stroke-width="10" opacity=".55"/>
+              <path d="M210 305l12 30 18-26 10 28 18-26 10 28 18-26 10 28 18-26 12 30"
+                    fill="none" stroke="rgba(255,255,255,.26)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+
+            <svg class="claws" id="claws" viewBox="0 0 600 600" aria-hidden="true">
+              <defs>
+                <linearGradient id="cG" x1="0" x2="1">
+                  <stop offset="0" stop-color="rgba(86,255,122,.98)"/>
+                  <stop offset=".55" stop-color="rgba(255,255,255,.92)"/>
+                  <stop offset="1" stop-color="rgba(86,255,122,.98)"/>
+                </linearGradient>
+              </defs>
+              <path d="M120 420c140-140 300-220 420-240" stroke="url(#cG)" stroke-width="18" stroke-linecap="round" opacity=".92"/>
+              <path d="M110 350c160-150 320-230 450-250" stroke="url(#cG)" stroke-width="14" stroke-linecap="round" opacity=".75"/>
+              <path d="M150 500c120-120 270-200 390-220" stroke="url(#cG)" stroke-width="16" stroke-linecap="round" opacity=".88"/>
+            </svg>
+
+            <svg class="bird" id="bird" viewBox="0 0 120 120" aria-hidden="true">
+              <path d="M10 70c20-10 30-30 50-30 10 0 20 10 30 20 10-10 20-20 30-20-12 22-28 40-50 45 8 10 16 18 22 25-20-4-38-14-52-32-8 10-18 18-30 24 6-12 12-22 0-32z"
+                    fill="rgba(255,255,255,.92)" />
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (() => {
+    // ============
+    // UI helpers
+    // ============
+    const gate = document.getElementById('gate');
+    const gateBtn = document.getElementById('gateBtn');
+    const logEl = document.getElementById('log');
+
+    const micDot = document.getElementById('micDot');
+    const micTxt = document.getElementById('micTxt');
+
+    const chipListen = document.getElementById('chipListen');
+    const chipThink  = document.getElementById('chipThink');
+    const chipSpeak  = document.getElementById('chipSpeak');
+
+    function esc(s){
+      return (s ?? '').toString()
+        .replaceAll('&','&amp;').replaceAll('<','&lt;')
+        .replaceAll('>','&gt;').replaceAll('"','&quot;')
+        .replaceAll("'","&#039;");
     }
-    // Speak a tiny silent-ish string to unlock (works in many browsers)
-    speak("Voice enabled.");
-    addMsg('System', 'Voice enabled. If you hear that, we’re good.');
-  }
+    function add(who, text){
+      const t = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      const div = document.createElement('div');
+      div.className = 'm';
+      div.innerHTML = `<span class="muted">[${t}]</span> <b>${esc(who)}:</b> ${esc(text)}`;
+      logEl.appendChild(div);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+    function setChip(el, on){ el.classList.toggle('on', !!on); }
+    function setMic(on, label){
+      micDot.classList.toggle('on', !!on);
+      micTxt.textContent = label;
+    }
 
-  // --- Speech input ---
-  function getRecognizer(){
+    // ============
+    // WOW intro
+    // ============
+    const stage = document.getElementById('stage');
+    const fakeSubmit = document.getElementById('fakeSubmit');
+    const formBox = document.getElementById('formBox');
+    const shredLayer = document.getElementById('shredLayer');
+    const strips = [...shredLayer.querySelectorAll('.strip')];
+    const debris = document.getElementById('debris');
+    const monster = document.getElementById('monster');
+    const claws = document.getElementById('claws');
+    const bird = document.getElementById('bird');
+    const revealRight = document.getElementById('revealRight');
+
+    let wowRan = false;
+
+    function makeDebris(){
+      debris.innerHTML = '';
+      const count = 34;
+      for(let i=0;i<count;i++){
+        const d = document.createElement('div');
+        d.className = 'chip2';
+        d.style.left = (40 + Math.random()*55) + '%';
+        d.style.top  = (35 + Math.random()*45) + '%';
+        d.style.setProperty('--dx', (Math.random()*440 - 220) + 'px');
+        d.style.setProperty('--dy', (Math.random()*-280 - 60) + 'px');
+        d.style.setProperty('--dr', (Math.random()*240 - 120) + 'deg');
+        debris.appendChild(d);
+      }
+    }
+
+    function playWOW(){
+      if(wowRan) return;
+      wowRan = true;
+
+      makeDebris();
+      debris.classList.add('active');
+
+      stage.style.animation = 'slam .28s ease 2';
+
+      monster.style.animation = 'monsterIn .65s cubic-bezier(.2,.9,.2,1) forwards';
+      claws.style.animation  = 'clawsIn  .55s cubic-bezier(.2,.9,.2,1) forwards';
+      monster.style.opacity = '1';
+      claws.style.opacity = '1';
+
+      setTimeout(() => {
+        shredLayer.classList.add('active');
+        strips.forEach((s, idx) => s.style.animation = `stripSlash .55s ease ${idx*0.12}s forwards`);
+        [...debris.querySelectorAll('.chip2')].forEach((c, i) => c.style.animation = `chipFly .85s cubic-bezier(.15,.8,.2,1) ${i*0.02}s forwards`);
+        formBox.style.animation = 'formShred 1.05s ease forwards';
+      }, 420);
+
+      setTimeout(() => {
+        revealRight.classList.add('on');
+      }, 1500);
+
+      setTimeout(() => {
+        bird.style.opacity = '1';
+        bird.style.animation = 'birdFly 1.3s ease forwards';
+        monster.style.transition = 'opacity .5s ease';
+        claws.style.transition = 'opacity .5s ease';
+        monster.style.opacity = '0';
+        claws.style.opacity = '0';
+      }, 1850);
+
+      setTimeout(() => {
+        debris.classList.remove('active');
+        shredLayer.classList.remove('active');
+      }, 3200);
+    }
+
+    fakeSubmit.addEventListener('click', () => location.reload());
+
+    // ============
+    // Voice Engine (hands-free loop)
+    // ============
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if(!SR) return null;
-    const r = new SR();
-    r.lang = 'en-US';
-    r.interimResults = false;
-    r.maxAlternatives = 1;
-    return r;
-  }
+    let rec = null;
+    let listening = false;
+    let speaking = false;
+    let thinking = false;
 
-  const recognizer = getRecognizer();
+    let buffer = '';
+    let flushTimer = null;
+    let lastHeardAt = 0;
 
-  async function sendToAI(message){
-    addMsg('You', message);
-    setStatus('thinking…');
-
-    try{
-      const res = await fetch('/api/chat', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ message })
-      });
-
-      if(!res.ok){
-        const t = await res.text().catch(()=> '');
-        throw new Error('HTTP ' + res.status + (t ? ' — ' + t.slice(0,120) : ''));
+    function tts(text){
+      if(!('speechSynthesis' in window)) return;
+      try{
+        speaking = true;
+        setChip(chipSpeak, true);
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'en-AU';
+        u.rate = 1.02;
+        u.pitch = 1.0;
+        u.onend = () => {
+          speaking = false;
+          setChip(chipSpeak, false);
+          // resume listening after speaking finishes
+          setTimeout(() => startListening('resume-after-tts'), 250);
+        };
+        window.speechSynthesis.speak(u);
+      }catch(e){
+        speaking = false;
+        setChip(chipSpeak, false);
       }
-
-      const data = await res.json();
-      const reply = data.reply || data.message || data.output || 'No reply field returned.';
-      addMsg('AI', reply);
-      speak(reply);
-      setStatus('ready.');
-    }catch(err){
-      addMsg('System', 'Fetch error: ' + (err && err.message ? err.message : String(err)));
-      setStatus('error.');
-    }
-  }
-
-  function startListening(){
-    if(!recognizer){
-      addMsg('System', 'Speech recognition not available here. Use the text box.');
-      return;
     }
 
-    btnTalk.disabled = true;
-    setStatus('listening…');
+    async function callBackend(userText){
+      thinking = true;
+      setChip(chipThink, true);
+      setStatus('thinking');
 
-    recognizer.onresult = (e) => {
-      const transcript = e.results && e.results[0] && e.results[0][0] ? e.results[0][0].transcript : '';
-      btnTalk.disabled = false;
-      setStatus('sending…');
-      if(transcript.trim()){
-        sendToAI(transcript.trim());
-      }else{
-        setStatus('ready.');
+      // If /api/chat exists, use it. If not, fallback to a demo reply.
+      try{
+        const res = await fetch('/api/chat', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ message: userText })
+        });
+
+        if(!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        const reply = data?.reply || 'No reply.';
+        return reply;
+      }catch(_){
+        // fallback (still shows the loop works)
+        return "Understood. Tell me what you need and I’ll handle it.";
+      } finally {
+        thinking = false;
+        setChip(chipThink, false);
       }
-    };
-
-    recognizer.onerror = (e) => {
-      btnTalk.disabled = false;
-      addMsg('System', 'Mic error: ' + (e && e.error ? e.error : 'unknown'));
-      setStatus('ready.');
-    };
-
-    recognizer.onend = () => {
-      // In some browsers onend fires without result.
-      btnTalk.disabled = false;
-      if(statusEl.textContent.includes('listening')) setStatus('ready.');
-    };
-
-    try{
-      recognizer.start();
-    }catch(e){
-      btnTalk.disabled = false;
-      addMsg('System', 'Mic start failed. Try again.');
-      setStatus('ready.');
     }
-  }
 
-  // --- Wire controls ---
-  btnEnable.addEventListener('click', enableVoice);
-  btnTalk.addEventListener('click', startListening);
-
-  btnSend.addEventListener('click', () => {
-    const v = (textInput.value || '').trim();
-    if(!v) return;
-    textInput.value = '';
-    sendToAI(v);
-  });
-
-  textInput.addEventListener('keydown', (e) => {
-    if(e.key === 'Enter'){
-      e.preventDefault();
-      btnSend.click();
+    function setStatus(mode){
+      if(mode === 'listening'){
+        setMic(true, 'Mic: listening');
+        setChip(chipListen, true);
+      }else if(mode === 'idle'){
+        setMic(false, 'Mic: idle');
+        setChip(chipListen, false);
+      }else if(mode === 'thinking'){
+        setMic(true, 'Mic: sending');
+        setChip(chipListen, true);
+      }
     }
-  });
 
-  // --- Boot message ---
-  addMsg('AI', "Hi. Tap “Enable Voice” once, then tap “Talk” and speak.");
-  setStatus('ready.');
-})();
-</script>
+    async function handleUtterance(text){
+      const t = (text || '').trim();
+      if(!t) return;
 
+      add('You', t);
+
+      // stop recognition while we fetch + speak (prevents echo feedback)
+      stopListening('handleUtterance');
+
+      const reply = await callBackend(t);
+      add('AI', reply);
+
+      // speak reply then auto resume listening in onend
+      tts(reply);
+    }
+
+    function flushNow(){
+      clearTimeout(flushTimer);
+      flushTimer = null;
+
+      const t = buffer.trim();
+      buffer = '';
+      if(t) handleUtterance(t);
+    }
+
+    function scheduleFlush(){
+      clearTimeout(flushTimer);
+      // adjust this: smaller = faster send after pause
+      flushTimer = setTimeout(() => {
+        // only flush if it's been quiet long enough
+        if(Date.now() - lastHeardAt >= 800) flushNow();
+      }, 900);
+    }
+
+    function buildRecognizer(){
+      if(!SR) return null;
+      const r = new SR();
+      r.lang = 'en-AU';
+      r.interimResults = true;
+      r.continuous = true;
+
+      r.onresult = (ev) => {
+        lastHeardAt = Date.now();
+
+        let interim = '';
+        let finals = '';
+
+        for(let i = ev.resultIndex; i < ev.results.length; i++){
+          const txt = ev.results[i][0]?.transcript || '';
+          if(ev.results[i].isFinal) finals += txt;
+          else interim += txt;
+        }
+
+        if(finals) buffer += (' ' + finals);
+        // even if only interim, schedule flush after silence
+        scheduleFlush();
+
+        // UI
+        setStatus('listening');
+      };
+
+      r.onerror = () => {
+        // auto restart
+        if(listening) setTimeout(() => startListening('error-restart'), 350);
+      };
+
+      r.onend = () => {
+        // auto restart if we want to be listening and not currently speaking
+        if(listening && !speaking) setTimeout(() => startListening('end-restart'), 250);
+      };
+
+      return r;
+    }
+
+    function startListening(reason){
+      if(!SR){
+        add('System', 'Speech recognition not supported in this browser.');
+        setStatus('idle');
+        return;
+      }
+      if(speaking || thinking) return;
+
+      if(!rec) rec = buildRecognizer();
+      if(!rec) return;
+
+      try{
+        listening = true;
+        setStatus('listening');
+        rec.start();
+      }catch(_){
+        // if already started, ignore
+        setStatus('listening');
+      }
+    }
+
+    function stopListening(reason){
+      listening = false;
+      setStatus('idle');
+      try{ rec && rec.stop(); }catch(_){}
+    }
+
+    async function boot(){
+      // Always load this page. Try auto-start voice engine; if it fails, show gate.
+      add('AI', 'Loading…');
+
+      // WOW runs 2s after load
+      setTimeout(playWOW, 2000);
+
+      // Try starting immediately (works on some devices after permission is already granted)
+      try{
+        if(!rec) rec = buildRecognizer();
+        startListening('auto');
+        // If start throws silently, we will show the gate after a short delay.
+        setTimeout(() => {
+          // If we’re not actually listening, show gate.
+          if(!listening){
+            gate.classList.remove('hidden');
+            add('System', 'Tap Start once to run the voice engine.');
+          }else{
+            gate.classList.add('hidden');
+          }
+        }, 600);
+      }catch(_){
+        gate.classList.remove('hidden');
+      }
+    }
+
+    // Gate tap: unlock audio + start mic loop + greeting
+    gateBtn.addEventListener('click', async () => {
+      gate.classList.add('hidden');
+
+      // unlock speech output
+      try{
+        if('speechSynthesis' in window){
+          window.speechSynthesis.cancel();
+          const u = new SpeechSynthesisUtterance(' ');
+          u.volume = 0.01;
+          window.speechSynthesis.speak(u);
+        }
+      }catch(_){}
+
+      // start mic loop now
+      startListening('gate');
+
+      // greeting (after 2 seconds like you wanted)
+      setTimeout(() => {
+        add('AI', 'Hi. You can talk normally now. I’m listening hands-free.');
+        tts('Hi. You can talk normally now. I am listening hands free.');
+      }, 2000);
+    });
+
+    // initial chips off
+    setChip(chipListen, false);
+    setChip(chipThink, false);
+    setChip(chipSpeak, false);
+    setStatus('idle');
+
+    // hide gate initially; we only show it if auto-start fails
+    gate.classList.add('hidden');
+
+    boot();
+  })();
+  </script>
 </body>
 </html>
+```0
