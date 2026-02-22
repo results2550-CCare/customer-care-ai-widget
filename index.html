@@ -1,123 +1,25 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Customer Care AI</title>
   <style>
     :root { color-scheme: dark; }
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #0f0f0f;
-      color: #fff;
-      display: grid;
-      place-items: center;
-      min-height: 100vh;
-    }
-    .wrap {
-      width: min(980px, 92vw);
-      border-radius: 18px;
-      background: #121212;
-      box-shadow: 0 18px 60px rgba(0,0,0,.6);
-      padding: 18px;
-    }
-    .top {
-      display: flex;
-      gap: 12px;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      margin-bottom: 12px;
-    }
-    .title {
-      font-size: 18px;
-      font-weight: 700;
-      letter-spacing: .2px;
-    }
-    .controls {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-    button {
-      border: 0;
-      border-radius: 12px;
-      padding: 10px 14px;
-      cursor: pointer;
-      font-weight: 700;
-      background: #ffb020;
-      color: #111;
-    }
-    button.secondary {
-      background: #2a2a2a;
-      color: #fff;
-      border: 1px solid #3a3a3a;
-      font-weight: 600;
-    }
-    .pill {
-      padding: 8px 10px;
-      border-radius: 999px;
-      background: #1b1b1b;
-      border: 1px solid #2a2a2a;
-      font-size: 13px;
-      opacity: .9;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: 1.2fr .8fr;
-      gap: 12px;
-    }
-    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
-    .panel {
-      border-radius: 16px;
-      background: #151515;
-      border: 1px solid #262626;
-      padding: 14px;
-      min-height: 320px;
-    }
-    .panel h3 {
-      margin: 0 0 10px 0;
-      font-size: 14px;
-      opacity: .9;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-    }
-    .log {
-      height: 330px;
-      overflow: auto;
-      background: #101010;
-      border: 1px solid #252525;
-      border-radius: 12px;
-      padding: 10px;
-      line-height: 1.35;
-      font-size: 14px;
-      white-space: pre-wrap;
-    }
-    .msg { margin: 8px 0; }
-    .sys { color: #ff6b6b; }
-    .you { color: #7CFF6B; }
-    .ai  { color: #62B8FF; }
-    .small {
-      font-size: 12px;
-      opacity: .75;
-      margin-top: 10px;
-    }
-    input, textarea {
-      width: 100%;
-      box-sizing: border-box;
-      border-radius: 12px;
-      border: 1px solid #2a2a2a;
-      background: #101010;
-      color: #fff;
-      padding: 10px 12px;
-      outline: none;
-    }
-    textarea { min-height: 120px; resize: vertical; }
-    .row { display: grid; gap: 10px; }
+    body{margin:0;font-family:Arial,system-ui;background:#0f0f0f;color:#fff;display:grid;place-items:center;min-height:100vh}
+    .wrap{width:min(980px,92vw);background:#121212;border-radius:18px;box-shadow:0 18px 60px rgba(0,0,0,.6);padding:18px}
+    .top{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+    .title{font-weight:700;font-size:20px}
+    .btn{border:0;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer}
+    .btn.primary{background:#ffb020;color:#111}
+    .btn.ghost{background:#2a2a2a;color:#fff}
+    .pill{background:#222;border-radius:999px;padding:8px 12px;font-weight:700}
+    .panel{margin-top:14px;background:#0e0e0e;border:1px solid #242424;border-radius:14px;padding:14px}
+    #convoLog{height:260px;overflow:auto;background:#0b0b0b;border:1px solid #262626;border-radius:12px;padding:12px;white-space:pre-wrap}
+    .hint{opacity:.8;margin-top:10px;font-size:13px}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+    .row input,.row textarea{width:100%;padding:12px;border-radius:12px;border:1px solid #2a2a2a;background:#0b0b0b;color:#fff}
+    .row textarea{grid-column:1/-1;min-height:80px;resize:vertical}
   </style>
 </head>
 
@@ -125,250 +27,172 @@
   <div class="wrap">
     <div class="top">
       <div class="title">Customer Care AI — Hands-Free Voice</div>
-      <div class="controls">
-        <button id="enableVoiceBtn">Enable Voice (1x)</button>
-        <button id="stopVoiceBtn" class="secondary">Stop</button>
-        <div class="pill" id="statusPill">Status: idle</div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button id="btnEnable" class="btn primary">Enable Voice (1x)</button>
+        <button id="btnStop" class="btn ghost">Stop</button>
+        <div id="statusPill" class="pill">Status: idle</div>
       </div>
     </div>
 
-    <div class="grid">
-      <div class="panel">
-        <h3>
-          <span>Conversation</span>
-          <span class="pill" id="modePill">idle</span>
-        </h3>
-        <div class="log" id="log"></div>
-        <div class="small">
-          Goal: press Enable once → speak naturally → it auto-sends when you stop talking → replies → goes back to listening.
-        </div>
-      </div>
+    <div class="panel">
+      <div style="font-weight:700;margin-bottom:8px">Conversation</div>
+      <div id="convoLog"></div>
+      <div class="hint">Goal: press Enable once → speak naturally → it auto-sends when you stop talking → replies → goes back to listening.</div>
+    </div>
 
-      <div class="panel">
-        <h3><span>Lead Capture (optional)</span></h3>
-        <div class="row">
-          <input placeholder="First name" />
-          <input placeholder="Last name" />
-          <input placeholder="Email" />
-          <input placeholder="Phone" />
-          <textarea placeholder="Notes"></textarea>
-          <button class="secondary" type="button" onclick="alert('Optional form only. Voice is the product.')">Submit</button>
-        </div>
+    <div class="panel">
+      <div style="font-weight:700;margin-bottom:8px">Lead Capture (optional)</div>
+      <div class="row">
+        <input placeholder="First name" />
+        <input placeholder="Last name" />
+        <input placeholder="Email" />
+        <input placeholder="Phone" />
+        <textarea placeholder="Notes"></textarea>
       </div>
+      <button class="btn ghost" style="margin-top:10px;width:100%">Submit</button>
     </div>
   </div>
 
-<script>
-/* =========================================================
-   HANDS-FREE VOICE LOOP
-   - Enable once, then runs itself
-   - listen -> final speech -> send -> speak -> listen
-   ========================================================= */
+  <script>
+  /* ============================================================
+     CUSTOMER CARE AI — VOICE CAPTURE FIX (ANDROID/CHROME SAFE)
+     - Uses SpeechRecognition OR webkitSpeechRecognition fallback
+     - Hands-free loop: listens -> emits final transcript -> keeps listening
+     - Prevents duplicate starts
+     ============================================================ */
 
-const UI = (() => {
-  const logEl = document.getElementById("log");
-  const statusPill = document.getElementById("statusPill");
-  const modePill = document.getElementById("modePill");
+  (() => {
+    const $ = (sel) => document.querySelector(sel);
 
-  function add(role, text) {
-    const div = document.createElement("div");
-    div.className = `msg ${role}`;
-    div.textContent = (role === "you" ? "You: " : role === "ai" ? "AI: " : "System: ") + text;
-    logEl.appendChild(div);
-    logEl.scrollTop = logEl.scrollHeight;
-  }
-  function setMode(mode) {
-    modePill.textContent = mode;
-    statusPill.textContent = "Status: " + mode;
-  }
-  return { add, setMode };
-})();
+    const convo = $("#convoLog");
+    const statusPill = $("#statusPill");
+    const btnEnable = $("#btnEnable");
+    const btnStop = $("#btnStop");
 
-const VoiceLoop = (() => {
-  const CFG = {
-    lang: "en-AU",
-    speakReplies: true,
-    restartDelayMs: 250
-  };
+    function setStatus(text){ statusPill.textContent = `Status: ${text}`; }
+    function logLine(label, text, color){
+      const line = document.createElement("div");
+      line.style.margin = "6px 0";
+      line.style.color = color || "#ddd";
+      line.textContent = `${label}: ${text}`;
+      convo.appendChild(line);
+      convo.scrollTop = convo.scrollHeight;
+    }
+    const logSystem = (t)=>logLine("System", t, "#ff4d4d");
+    const logYou    = (t)=>logLine("You", t, "#d6b56a");
+    const logAI     = (t)=>logLine("AI", t, "#cfcfcf");
 
-  let recognition = null;
-  let micStream = null;
-  let enabled = false;
-  let speaking = false;
-  let stopFlag = false;
-  let abortCtrl = null;
-
-  function supported() {
-    return !!(window.SpeechRecognition || window.webkitSpeechRecognition) &&
-           !!navigator.mediaDevices?.getUserMedia;
-  }
-
-  function safeStart() {
-    if (!recognition || stopFlag) return;
-    if (!enabled) return;
-    if (speaking) return;
-    try { recognition.start(); } catch {}
-  }
-
-  function safeStop() {
-    if (!recognition) return;
-    try { recognition.stop(); } catch {}
-  }
-
-  async function enableOnceAndStart() {
-    stopFlag = false;
-    UI.setMode("permission");
-
-    if (!supported()) {
-      UI.setMode("error");
-      UI.add("sys", "Voice not supported on this browser (needs SpeechRecognition + mic).");
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition){
+      logSystem("SpeechRecognition not supported on this device/browser.");
+      setStatus("not supported");
       return;
     }
 
-    try {
-      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    } catch {
-      UI.setMode("error");
-      UI.add("sys", "Mic permission denied.");
-      return;
+    let recognition = null;
+    let enabled = false;
+    let stopping = false;
+    let isRunning = false;
+
+    let lastFinalAt = 0;
+    let lastFinalText = "";
+
+    async function sendToAI(text){
+      // Placeholder so you can confirm mic works FIRST.
+      logAI(`(placeholder) heard: "${text}"`);
     }
 
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    recognition = new SR();
-    recognition.lang = CFG.lang;
-    recognition.interimResults = true;
-    recognition.continuous = true;
+    function buildRecognition(){
+      const r = new SpeechRecognition();
+      r.lang = "en-AU";
+      r.continuous = true;
+      r.interimResults = true;
+      r.maxAlternatives = 1;
 
-    recognition.onstart = () => UI.setMode("listening");
+      r.onstart = () => {
+        isRunning = true;
+        setStatus("listening");
+        logSystem("Mic is LIVE. Speak naturally.");
+      };
 
-    recognition.onresult = (e) => {
-      // Build final text only; ignore interim for “retained text” issues
-      let finalText = "";
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        const r = e.results[i];
-        if (r.isFinal) {
-          const t = (r[0]?.transcript || "").trim();
-          if (t) finalText += (finalText ? " " : "") + t;
+      r.onerror = (e) => {
+        const err = (e && e.error) ? e.error : "unknown";
+        logSystem(`Voice error: ${err}`);
+        setStatus(`error: ${err}`);
+      };
+
+      r.onend = () => {
+        isRunning = false;
+        if (enabled && !stopping){
+          setStatus("restarting...");
+          setTimeout(() => {
+            try { r.start(); } catch (_) { setTimeout(()=>{ try{ r.start(); }catch(_){} }, 300); }
+          }, 250);
+        } else {
+          setStatus("stopped");
         }
+      };
+
+      let finalBuffer = "";
+
+      r.onresult = (event) => {
+        for (let i = event.resultIndex; i < event.results.length; i++){
+          const res = event.results[i];
+          const txt = (res[0] && res[0].transcript) ? res[0].transcript : "";
+          if (res.isFinal) finalBuffer += txt;
+        }
+
+        const finalText = finalBuffer.trim();
+        if (!finalText) return;
+
+        const now = Date.now();
+        if (finalText === lastFinalText && (now - lastFinalAt) < 1200){
+          finalBuffer = "";
+          return;
+        }
+
+        lastFinalText = finalText;
+        lastFinalAt = now;
+        finalBuffer = "";
+
+        logYou(finalText);
+        sendToAI(finalText).catch(()=>logSystem("AI call failed (sendToAI)."));
+      };
+
+      return r;
+    }
+
+    function enableVoiceOnce(){
+      if (enabled && isRunning){
+        logSystem("Already listening.");
+        return;
       }
-      if (!finalText) return;
+      enabled = true;
+      stopping = false;
+      if (!recognition) recognition = buildRecognition();
 
-      // stop listening while we process
-      safeStop();
-      handleUtterance(finalText);
-    };
-
-    recognition.onerror = (e) => {
-      if (stopFlag) return;
-      const err = e?.error || "speech_error";
-      // ignore our own stop
-      if (err === "aborted") return;
-      UI.setMode("error");
-      UI.add("sys", "Voice error: " + err);
-      setTimeout(() => safeStart(), 600);
-    };
-
-    recognition.onend = () => {
-      if (stopFlag) return;
-      // If we’re not speaking or thinking, restart
-      if (enabled && !speaking && UI) setTimeout(() => safeStart(), 250);
-    };
-
-    enabled = true;
-    UI.add("sys", "Voice enabled. Hands-free loop is ON.");
-    safeStart();
-  }
-
-  async function handleUtterance(text) {
-    UI.add("you", text);
-    UI.setMode("thinking");
-
-    const reply = await sendToApi(text).catch(err => {
-      UI.setMode("error");
-      UI.add("sys", "Chat API error: " + (err?.message || err));
-      return "";
-    });
-
-    if (!reply) {
-      UI.setMode("listening");
-      setTimeout(() => safeStart(), 400);
-      return;
+      try {
+        recognition.start();
+        logSystem("Voice enabled. Hands-free loop is ON.");
+      } catch (_) {
+        logSystem("Enable pressed. If nothing happens, press Stop then Enable again.");
+      }
     }
 
-    UI.add("ai", reply);
-
-    if (CFG.speakReplies && "speechSynthesis" in window) {
-      await speak(reply);
+    function stopVoice(){
+      stopping = true;
+      enabled = false;
+      setStatus("stopping...");
+      try { recognition && recognition.stop(); } catch (_) {}
+      logSystem("Stopped.");
     }
 
-    UI.setMode("listening");
-    setTimeout(() => safeStart(), CFG.restartDelayMs);
-  }
+    btnEnable.addEventListener("click", enableVoiceOnce);
+    btnStop.addEventListener("click", stopVoice);
 
-  async function sendToApi(text) {
-    // Abort prior request to avoid overlapping responses
-    if (abortCtrl) abortCtrl.abort();
-    abortCtrl = new AbortController();
-
-    const res = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      signal: abortCtrl.signal,
-      body: JSON.stringify({ text })
-    });
-
-    if (!res.ok) {
-      const t = await res.text().catch(() => "");
-      throw new Error(`${res.status} ${t || ""}`.trim());
-    }
-
-    const data = await res.json().catch(() => ({}));
-    return (data.reply || "").trim();
-  }
-
-  function speak(text) {
-    return new Promise((resolve) => {
-      speaking = true;
-      UI.setMode("speaking");
-      try { window.speechSynthesis.cancel(); } catch {}
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = CFG.lang;
-
-      u.onend = () => { speaking = false; resolve(); };
-      u.onerror = () => { speaking = false; resolve(); };
-
-      // Prevent feedback loop
-      safeStop();
-      window.speechSynthesis.speak(u);
-    });
-  }
-
-  function stopAll() {
-    stopFlag = true;
-    enabled = false;
-    speaking = false;
-
-    try { window.speechSynthesis?.cancel?.(); } catch {}
-    safeStop();
-
-    if (micStream) {
-      micStream.getTracks().forEach(t => t.stop());
-      micStream = null;
-    }
-
-    UI.setMode("idle");
-    UI.add("sys", "Stopped.");
-  }
-
-  return { enableOnceAndStart, stopAll };
-})();
-
-document.getElementById("enableVoiceBtn").addEventListener("click", () => {
-  VoiceLoop.enableOnceAndStart();
-});
-document.getElementById("stopVoiceBtn").addEventListener("click", () => {
-  VoiceLoop.stopAll();
-});
-</script>
+    setStatus("idle");
+    logSystem("Ready. Press Enable Voice (1x).");
+  })();
+  </script>
 </body>
 </html>
