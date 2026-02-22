@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="theme-color" content="#0b0b0f" />
-  <title>Customer Care AI — Demo</title>
+  <title>Customer Care AI — Voice Demo</title>
 
   <style>
     :root{
@@ -18,38 +18,21 @@
       --radius:22px;
       --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Helvetica Neue", Helvetica;
     }
-
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
       margin:0;
       font-family:var(--font);
-      background: radial-gradient(1200px 800px at 70% 20%, rgba(255,165,0,.10), transparent 55%),
-                  radial-gradient(900px 600px at 20% 80%, rgba(120,200,255,.08), transparent 55%),
-                  var(--bg);
+      background:
+        radial-gradient(1200px 800px at 70% 20%, rgba(255,165,0,.10), transparent 55%),
+        radial-gradient(900px 600px at 20% 80%, rgba(120,200,255,.08), transparent 55%),
+        var(--bg);
       color:var(--text);
       overflow-x:hidden;
     }
-
-    .wrap{
-      min-height:100%;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:40px 18px;
-    }
-
-    .stage{
-      width:min(1100px, 100%);
-      display:grid;
-      grid-template-columns: 1.2fr .8fr;
-      gap:22px;
-      align-items:stretch;
-    }
-
-    @media (max-width: 920px){
-      .stage{grid-template-columns:1fr; }
-    }
+    .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:40px 18px;}
+    .stage{width:min(1100px, 100%);display:grid;grid-template-columns: 1.2fr .8fr;gap:22px;align-items:stretch;}
+    @media (max-width: 920px){ .stage{grid-template-columns:1fr;} }
 
     .card{
       background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
@@ -60,37 +43,16 @@
       position:relative;
       overflow:hidden;
     }
-
     .card::before{
       content:"";
       position:absolute; inset:-2px;
       background: radial-gradient(500px 220px at 20% 0%, rgba(255,165,0,.18), transparent 55%);
       pointer-events:none;
     }
+    h1{margin:0 0 10px;font-size:38px;letter-spacing:-.6px;position:relative;z-index:1;}
+    p{margin:0;color:var(--muted);line-height:1.5;font-size:15px;position:relative;z-index:1;}
 
-    h1{
-      margin:0 0 10px;
-      font-size:38px;
-      letter-spacing:-.6px;
-      position:relative;
-      z-index:1;
-    }
-
-    p{
-      margin:0;
-      color:var(--muted);
-      line-height:1.5;
-      font-size:15px;
-      position:relative;
-      z-index:1;
-    }
-
-    .pillrow{
-      margin-top:16px;
-      display:flex; flex-wrap:wrap; gap:10px;
-      position:relative; z-index:1;
-    }
-
+    .pillrow{margin-top:16px;display:flex;flex-wrap:wrap;gap:10px;position:relative;z-index:1;}
     .pill{
       border:1px solid var(--border);
       background:rgba(0,0,0,.25);
@@ -100,21 +62,11 @@
       color:rgba(233,233,238,.82);
       display:flex; gap:8px; align-items:center;
     }
+    .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 18px rgba(255,165,0,.55);}
+    .footerhint{margin-top:14px;font-size:12px;color:rgba(233,233,238,.60);}
 
-    .dot{
-      width:10px; height:10px; border-radius:50%;
-      background:var(--accent);
-      box-shadow:0 0 18px rgba(255,165,0,.55);
-    }
-
-    /* Widget dock (right side) */
-    .dock{
-      position:relative;
-      min-height:360px;
-      padding:0;
-    }
-
-    /* Make the widget feel “installed” in a common WP-style box */
+    /* “Boring WP box” on the right */
+    .dock{position:relative;min-height:460px;padding:0;}
     .wpbox{
       border-radius:var(--radius);
       border:1px solid var(--border);
@@ -123,7 +75,6 @@
       overflow:hidden;
       position:relative;
     }
-
     .wphead{
       padding:12px 14px;
       display:flex;
@@ -134,38 +85,94 @@
       font-size:12px;
       color:rgba(233,233,238,.78);
     }
-
     .wphead strong{color:rgba(233,233,238,.92); font-weight:600}
-    .wpbody{
-      padding:14px;
-      height:calc(100% - 45px);
-    }
+    .wpbody{padding:14px;height:calc(100% - 45px);}
 
-    /* This is where your existing widget JS will mount itself (if it does) */
-    #ccai-mount{
+    /* Chat UI */
+    .chatShell{
       height:100%;
-      width:100%;
-      position:relative;
-    }
-
-    /* Safe fallback message if widget fails to load */
-    .fallback{
-      height:100%;
-      border:1px dashed rgba(255,255,255,.18);
-      border-radius:16px;
       display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:16px;
-      text-align:center;
-      color:rgba(233,233,238,.70);
-      font-size:13px;
+      flex-direction:column;
+      gap:10px;
+    }
+    .chatLog{
+      flex:1;
+      overflow:auto;
+      padding:12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(0,0,0,.25);
+    }
+    .msg{margin:0 0 10px;display:flex;gap:10px;}
+    .tag{
+      min-width:44px;
+      font-size:11px;
+      color:rgba(233,233,238,.75);
+      padding-top:3px;
+    }
+    .bubble{
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.05);
+      color:rgba(233,233,238,.92);
+      font-size:14px;
+      line-height:1.35;
+      max-width: 100%;
+      white-space:pre-wrap;
+      word-break:break-word;
+    }
+    .bubble.you{
+      border-color: rgba(255,165,0,.35);
+      background: rgba(255,165,0,.08);
     }
 
-    .footerhint{
-      margin-top:14px;
+    .controls{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+    button{
+      border:none;
+      border-radius:14px;
+      padding:12px 12px;
+      font-weight:700;
+      cursor:pointer;
+      background:#f97316;
+      color:#0b0b0f;
+    }
+    button.secondary{
+      background: rgba(255,255,255,.08);
+      color: rgba(233,233,238,.92);
+      border:1px solid rgba(255,255,255,.14);
+    }
+    button:disabled{opacity:.55;cursor:not-allowed}
+    .status{
       font-size:12px;
-      color:rgba(233,233,238,.60);
+      color:rgba(233,233,238,.70);
+      margin-top:6px;
+    }
+    .mini{
+      display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;
+    }
+    .mini input{
+      flex:1;
+      min-width: 150px;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(0,0,0,.22);
+      color:rgba(233,233,238,.92);
+      outline:none;
+    }
+    .mini input::placeholder{color:rgba(233,233,238,.45)}
+    .smallBtn{
+      padding:10px 12px;
+      border-radius:12px;
+      background:rgba(255,255,255,.10);
+      color:rgba(233,233,238,.92);
+      border:1px solid rgba(255,255,255,.14);
+      font-weight:700;
     }
   </style>
 </head>
@@ -174,35 +181,44 @@
   <div class="wrap">
     <div class="stage">
       <section class="card">
-        <h1>Customer Care AI Demo</h1>
+        <h1>Customer Care AI</h1>
         <p>
-          This page is a clean “sales demo” shell. The widget should appear in the right-hand box.
-          If it stays empty, we’ll check the script path next.
+          Voice-first demo: speak a question, get a response back in text and voice.
+          This is the “engine” build. Cinematic/monster layer comes after it’s stable.
         </p>
 
         <div class="pillrow">
-          <div class="pill"><span class="dot"></span> Voice-ready</div>
-          <div class="pill"><span class="dot"></span> Keyboardless flow</div>
-          <div class="pill"><span class="dot"></span> Universal embed</div>
+          <div class="pill"><span class="dot"></span> Speech input</div>
+          <div class="pill"><span class="dot"></span> Spoken reply</div>
+          <div class="pill"><span class="dot"></span> Lead capture</div>
         </div>
 
         <div class="footerhint">
-          Tip: after you commit, open the live site again and hard refresh (reload).
+          If speech doesn’t play on first load, tap “Enable Voice” once (browser permission).
         </div>
       </section>
 
       <aside class="card dock">
         <div class="wpbox">
           <div class="wphead">
-            <strong>Website Contact Box</strong>
-            <span>Powered by Customer Care AI</span>
+            <strong>Contact Box</strong>
+            <span>Customer Care AI Widget</span>
           </div>
           <div class="wpbody">
-            <div id="ccai-mount">
-              <div class="fallback">
-                If you can read this, the page loaded.<br/>
-                If the widget doesn’t appear, the script path isn’t loading yet.
+            <div class="chatShell">
+              <div class="chatLog" id="chatLog"></div>
+
+              <div class="controls">
+                <button id="btnTalk">🎤 Talk</button>
+                <button class="secondary" id="btnEnable">🔊 Enable Voice</button>
               </div>
+
+              <div class="mini">
+                <input id="textInput" placeholder="Optional: type here if needed…" />
+                <button class="smallBtn" id="btnSend">Send</button>
+              </div>
+
+              <div class="status" id="status">Status: ready.</div>
             </div>
           </div>
         </div>
@@ -210,10 +226,163 @@
     </div>
   </div>
 
-  <!-- IMPORTANT:
-       This assumes your existing widget code is in /api/chat.js (you have an /api folder).
-       If your widget expects a different file name, we’ll change this ONE line. -->
-  <script src="/api/chat.js"></script>
+<script>
+(() => {
+  const log = document.getElementById('chatLog');
+  const statusEl = document.getElementById('status');
+  const btnTalk = document.getElementById('btnTalk');
+  const btnEnable = document.getElementById('btnEnable');
+  const textInput = document.getElementById('textInput');
+  const btnSend = document.getElementById('btnSend');
+
+  // --- Utilities ---
+  function setStatus(t){ statusEl.textContent = "Status: " + t; }
+  function addMsg(who, text){
+    const row = document.createElement('div');
+    row.className = 'msg';
+    const tag = document.createElement('div');
+    tag.className = 'tag';
+    tag.textContent = who;
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble' + (who === 'You' ? ' you' : '');
+    bubble.textContent = text;
+    row.appendChild(tag);
+    row.appendChild(bubble);
+    log.appendChild(row);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  // --- Speech output ---
+  function canSpeak(){
+    return typeof window.speechSynthesis !== 'undefined' && typeof window.SpeechSynthesisUtterance !== 'undefined';
+  }
+
+  function speak(text){
+    if(!canSpeak()) return;
+    // Cancel any queued speech so it doesn't overlap.
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US';
+    u.rate = 1.0;
+    u.pitch = 1.0;
+    window.speechSynthesis.speak(u);
+  }
+
+  // Some browsers require a user gesture to "unlock" audio.
+  function enableVoice(){
+    if(!canSpeak()){
+      addMsg('System', 'Speech synthesis not available on this browser/device.');
+      return;
+    }
+    // Speak a tiny silent-ish string to unlock (works in many browsers)
+    speak("Voice enabled.");
+    addMsg('System', 'Voice enabled. If you hear that, we’re good.');
+  }
+
+  // --- Speech input ---
+  function getRecognizer(){
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if(!SR) return null;
+    const r = new SR();
+    r.lang = 'en-US';
+    r.interimResults = false;
+    r.maxAlternatives = 1;
+    return r;
+  }
+
+  const recognizer = getRecognizer();
+
+  async function sendToAI(message){
+    addMsg('You', message);
+    setStatus('thinking…');
+
+    try{
+      const res = await fetch('/api/chat', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ message })
+      });
+
+      if(!res.ok){
+        const t = await res.text().catch(()=> '');
+        throw new Error('HTTP ' + res.status + (t ? ' — ' + t.slice(0,120) : ''));
+      }
+
+      const data = await res.json();
+      const reply = data.reply || data.message || data.output || 'No reply field returned.';
+      addMsg('AI', reply);
+      speak(reply);
+      setStatus('ready.');
+    }catch(err){
+      addMsg('System', 'Fetch error: ' + (err && err.message ? err.message : String(err)));
+      setStatus('error.');
+    }
+  }
+
+  function startListening(){
+    if(!recognizer){
+      addMsg('System', 'Speech recognition not available here. Use the text box.');
+      return;
+    }
+
+    btnTalk.disabled = true;
+    setStatus('listening…');
+
+    recognizer.onresult = (e) => {
+      const transcript = e.results && e.results[0] && e.results[0][0] ? e.results[0][0].transcript : '';
+      btnTalk.disabled = false;
+      setStatus('sending…');
+      if(transcript.trim()){
+        sendToAI(transcript.trim());
+      }else{
+        setStatus('ready.');
+      }
+    };
+
+    recognizer.onerror = (e) => {
+      btnTalk.disabled = false;
+      addMsg('System', 'Mic error: ' + (e && e.error ? e.error : 'unknown'));
+      setStatus('ready.');
+    };
+
+    recognizer.onend = () => {
+      // In some browsers onend fires without result.
+      btnTalk.disabled = false;
+      if(statusEl.textContent.includes('listening')) setStatus('ready.');
+    };
+
+    try{
+      recognizer.start();
+    }catch(e){
+      btnTalk.disabled = false;
+      addMsg('System', 'Mic start failed. Try again.');
+      setStatus('ready.');
+    }
+  }
+
+  // --- Wire controls ---
+  btnEnable.addEventListener('click', enableVoice);
+  btnTalk.addEventListener('click', startListening);
+
+  btnSend.addEventListener('click', () => {
+    const v = (textInput.value || '').trim();
+    if(!v) return;
+    textInput.value = '';
+    sendToAI(v);
+  });
+
+  textInput.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter'){
+      e.preventDefault();
+      btnSend.click();
+    }
+  });
+
+  // --- Boot message ---
+  addMsg('AI', "Hi. Tap “Enable Voice” once, then tap “Talk” and speak.");
+  setStatus('ready.');
+})();
+</script>
+
 </body>
 </html>
-
