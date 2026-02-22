@@ -1,52 +1,116 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>Customer Care AI</title>
-  <style>
-    body {
-      margin:0;
-      font-family: Arial, sans-serif;
-      background:#0f0f0f;
-      color:white;
-      text-align:center;
-      padding-top:120px;
-    }
+<meta charset="UTF-8">
+<title>Customer Care AI</title>
 
-    h1 {
-      font-size:42px;
-      margin-bottom:20px;
-    }
+<style>
+body {
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#0b0f14;
+  color:white;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
 
-    p {
-      font-size:18px;
-      opacity:0.8;
-    }
+.container {
+  width:90%;
+  max-width:500px;
+  background:#111827;
+  padding:30px;
+  border-radius:12px;
+  box-shadow:0 0 30px rgba(0,0,0,0.5);
+}
 
-    #guide {
-      position:fixed;
-      bottom:30px;
-      right:30px;
-      width:60px;
-      height:60px;
-      background:orange;
-      border-radius:50%;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-weight:bold;
-      cursor:pointer;
-      box-shadow:0 0 20px rgba(255,165,0,0.5);
-    }
-  </style>
+h1 {
+  text-align:center;
+  margin-bottom:20px;
+}
+
+.chat-box {
+  height:300px;
+  overflow-y:auto;
+  background:#0f172a;
+  padding:15px;
+  border-radius:8px;
+  margin-bottom:15px;
+  font-size:14px;
+}
+
+button {
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:8px;
+  background:#f97316;
+  color:white;
+  font-size:16px;
+  cursor:pointer;
+}
+
+button:hover {
+  background:#ea580c;
+}
+</style>
 </head>
 
 <body>
 
-<h1>Customer Care AI</h1>
-<p>If you can see this page, deployment is working correctly.</p>
+<div class="container">
+  <h1>Customer Care AI</h1>
+  <div class="chat-box" id="chat"></div>
+  <button onclick="startListening()">🎤 Speak</button>
+</div>
 
-<div id="guide">AI</div>
+<script>
+const chat = document.getElementById("chat");
+
+function addMessage(text, sender) {
+  const msg = document.createElement("div");
+  msg.innerText = sender + ": " + text;
+  chat.appendChild(msg);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function speak(text) {
+  const speech = new SpeechSynthesisUtterance(text);
+  speech.lang = "en-US";
+  window.speechSynthesis.speak(speech);
+}
+
+async function sendToAI(text) {
+  addMessage(text, "You");
+
+  const response = await fetch("/api/chat", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({message:text})
+  });
+
+  const data = await response.json();
+
+  addMessage(data.reply, "AI");
+  speak(data.reply);
+}
+
+function startListening() {
+  const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+  recognition.lang = "en-US";
+  recognition.start();
+
+  recognition.onresult = function(event) {
+    const transcript = event.results[0][0].transcript;
+    sendToAI(transcript);
+  };
+
+  recognition.onerror = function(event) {
+    addMessage("Microphone error: " + event.error, "System");
+  };
+}
+</script>
 
 </body>
 </html>
