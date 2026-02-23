@@ -1,361 +1,1012 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>WOW Cinematic</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Customer Care AI — WOW</title>
+  <style>
+    :root{
+      --bg:#000;
+      --fg:#fff;
+      --muted:rgba(255,255,255,.72);
+      --line:rgba(255,255,255,.12);
+      --accent:#00ffff;
+      --accent2:#7c4dff;
+      --card:rgba(10,10,14,.55);
+      --card2:rgba(10,10,14,.35);
+      --shadow: 0 18px 60px rgba(0,0,0,.55);
+      --radius:16px;
+    }
+    html,body{height:100%;}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--fg);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      overflow:hidden;
+    }
+    canvas{display:block;}
+    /* UI overlay */
+    .ui{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+    }
+    .topbar{
+      position:absolute;
+      top:18px;
+      left:18px;
+      right:18px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      pointer-events:none;
+    }
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      pointer-events:auto;
+      user-select:none;
+    }
+    .dot{
+      width:12px;height:12px;border-radius:999px;
+      background:var(--accent);
+      box-shadow:0 0 18px rgba(0,255,255,.8);
+    }
+    .brand b{letter-spacing:.6px;}
+    .pill{
+      pointer-events:auto;
+      border:1px solid var(--line);
+      background:rgba(0,0,0,.35);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color:var(--muted);
+      padding:10px 12px;
+      border-radius:999px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+      font-size:13px;
+      line-height:1;
+    }
+    .statusLamp{
+      width:8px;height:8px;border-radius:999px;
+      background:rgba(255,255,255,.22);
+      box-shadow:none;
+    }
+    .statusLamp.live{
+      background:var(--accent);
+      box-shadow:0 0 14px rgba(0,255,255,.85);
+    }
 
-<script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/postprocessing/EffectComposer.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/postprocessing/RenderPass.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/postprocessing/ShaderPass.js"></script>
+    .hero{
+      position:absolute;
+      inset:0;
+      display:grid;
+      place-items:center;
+      padding:84px 18px 24px 18px;
+      pointer-events:none;
+    }
+    .panel{
+      width:min(980px, 100%);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      background:linear-gradient(180deg, rgba(10,10,14,.55), rgba(10,10,14,.20));
+      box-shadow:var(--shadow);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      pointer-events:auto;
+      overflow:hidden;
+      position:relative;
+    }
+    .panel::before{
+      content:"";
+      position:absolute;
+      inset:-2px;
+      background:radial-gradient(600px 180px at 20% 10%, rgba(0,255,255,.18), transparent 55%),
+                 radial-gradient(520px 160px at 80% 20%, rgba(124,77,255,.14), transparent 55%);
+      pointer-events:none;
+    }
+    .panelInner{
+      position:relative;
+      padding:26px 26px 22px 26px;
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:18px;
+    }
+    @media (max-width: 820px){
+      .panelInner{grid-template-columns:1fr;}
+    }
+    h1{
+      margin:0;
+      font-size: clamp(28px, 4vw, 52px);
+      line-height:1.05;
+      letter-spacing:.2px;
+    }
+    .sub{
+      margin:10px 0 0 0;
+      color:var(--muted);
+      font-size: clamp(14px, 1.6vw, 18px);
+      line-height:1.4;
+      max-width: 52ch;
+    }
+    .ctaRow{
+      margin-top:16px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+    }
+    .btn{
+      pointer-events:auto;
+      appearance:none;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.06);
+      color:var(--fg);
+      padding:12px 14px;
+      border-radius:12px;
+      font-weight:650;
+      letter-spacing:.2px;
+      cursor:pointer;
+      box-shadow: 0 12px 30px rgba(0,0,0,.35);
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      text-decoration:none;
+      user-select:none;
+    }
+    .btnPrimary{
+      background:linear-gradient(135deg, rgba(0,255,255,.18), rgba(0,255,255,.06));
+      border-color:rgba(0,255,255,.35);
+    }
+    .btnSecondary{
+      background:linear-gradient(135deg, rgba(124,77,255,.14), rgba(255,255,255,.06));
+      border-color:rgba(124,77,255,.28);
+    }
+    .btn:active{transform: translateY(1px);}
+    .hint{
+      margin-top:10px;
+      color:rgba(255,255,255,.55);
+      font-size:12.5px;
+    }
 
-<style>
-body { margin:0; overflow:hidden; background:#000; }
-canvas { display:block; }
-</style>
+    .rightCard{
+      border:1px solid var(--line);
+      background:linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.18));
+      border-radius:14px;
+      padding:14px;
+      min-height: 180px;
+      position:relative;
+      overflow:hidden;
+    }
+    .rightCard::before{
+      content:"";
+      position:absolute;
+      inset:-20px;
+      background:radial-gradient(240px 140px at 20% 30%, rgba(0,255,255,.12), transparent 60%),
+                 radial-gradient(260px 150px at 70% 20%, rgba(124,77,255,.10), transparent 60%);
+      pointer-events:none;
+      filter: blur(2px);
+    }
+    .rightCardInner{position:relative;}
+    .kpi{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-top:10px;
+    }
+    .kpi .box{
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:10px;
+      background:rgba(255,255,255,.04);
+    }
+    .kpi .num{
+      font-size:18px;
+      font-weight:750;
+      letter-spacing:.2px;
+    }
+    .kpi .lbl{
+      margin-top:4px;
+      font-size:12px;
+      color:rgba(255,255,255,.62);
+    }
+    .miniTitle{
+      font-size:13px;
+      color:rgba(255,255,255,.72);
+      letter-spacing:.25px;
+      text-transform:uppercase;
+    }
+    .log{
+      margin-top:10px;
+      border:1px solid var(--line);
+      border-radius:12px;
+      background:rgba(0,0,0,.35);
+      padding:10px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      color:rgba(255,255,255,.82);
+      font-size:12px;
+      line-height:1.35;
+      height: 92px;
+      overflow:hidden;
+      position:relative;
+    }
+    .log::after{
+      content:"";
+      position:absolute;
+      left:0;right:0;bottom:0;
+      height:28px;
+      background:linear-gradient(180deg, transparent, rgba(0,0,0,.85));
+      pointer-events:none;
+    }
+
+    .footer{
+      position:absolute;
+      left:18px;
+      right:18px;
+      bottom:18px;
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      gap:12px;
+      pointer-events:none;
+    }
+    .fine{
+      pointer-events:auto;
+      color:rgba(255,255,255,.50);
+      font-size:12px;
+      max-width: 70ch;
+      line-height:1.35;
+    }
+    .fine a{color:rgba(255,255,255,.70); text-decoration:none; border-bottom:1px solid rgba(255,255,255,.18);}
+    .toggles{
+      pointer-events:auto;
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    .chip{
+      border:1px solid var(--line);
+      background:rgba(0,0,0,.35);
+      color:rgba(255,255,255,.75);
+      padding:8px 10px;
+      border-radius:999px;
+      font-size:12px;
+      cursor:pointer;
+      user-select:none;
+    }
+    .chip.on{
+      border-color:rgba(0,255,255,.35);
+      box-shadow:0 0 18px rgba(0,255,255,.12);
+      color:rgba(255,255,255,.92);
+    }
+
+    /* Screen crack overlay (visual only; post-distortion happens in shader pass) */
+    .crackOverlay{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      opacity:0;
+      transition: opacity 900ms ease;
+      background:
+        radial-gradient(1200px 680px at 50% 46%, rgba(255,255,255,.14), transparent 55%),
+        repeating-conic-gradient(from 0deg at 50% 46%,
+          rgba(255,255,255,.07) 0 2deg,
+          transparent 2deg 12deg);
+      mix-blend-mode:screen;
+      filter: blur(.15px);
+    }
+    .crackOverlay.on{opacity:.6;}
+  </style>
 </head>
+
 <body>
-<script>
+  <div class="ui" aria-hidden="true">
+    <div class="topbar">
+      <div class="brand">
+        <span class="dot"></span>
+        <b>Customer Care AI</b>
+      </div>
+      <div class="pill">
+        <span class="statusLamp" id="lamp"></span>
+        <span id="statusText">Cinematic demo armed</span>
+      </div>
+    </div>
 
-/* ================= BASIC ================= */
+    <div class="hero">
+      <div class="panel">
+        <div class="panelInner">
+          <div>
+            <h1>Voice-first customer experiences — with a WOW demo that sells the idea.</h1>
+            <p class="sub">
+              This page is your attention-grabber. Keep your enterprise version clean; use this to show what “human-to-human” feels like when the tech is alive.
+            </p>
+            <div class="ctaRow">
+              <!-- Change these links to match your real routes -->
+              <a class="btn btnPrimary" href="/voice" id="btnVoice">
+                Launch Business Demo
+                <span style="opacity:.8">→</span>
+              </a>
+              <a class="btn btnSecondary" href="mailto:hello@customercareai.online?subject=Customer%20Care%20AI%20Demo%20Request" id="btnDemo">
+                Request Enterprise Demo
+                <span style="opacity:.8">→</span>
+              </a>
+              <button class="btn" id="btnReplay" type="button">
+                Replay WOW
+                <span style="opacity:.8">↻</span>
+              </button>
+            </div>
+            <div class="hint" id="hint">
+              Autoplays the sequence. If you want a different URL for “Business Demo”, change the <code>href</code> on the button.
+            </div>
+          </div>
 
-const scene = new THREE.Scene();
-scene.fog = new THREE.Fog(0x000000,20,200);
+          <div class="rightCard">
+            <div class="rightCardInner">
+              <div class="miniTitle">Enterprise outcomes</div>
+              <div class="kpi">
+                <div class="box">
+                  <div class="num">↓ friction</div>
+                  <div class="lbl">less typing, faster conversion</div>
+                </div>
+                <div class="box">
+                  <div class="num">↑ leads</div>
+                  <div class="lbl">capture while they’re engaged</div>
+                </div>
+                <div class="box">
+                  <div class="num">24/7</div>
+                  <div class="lbl">always-on customer ops</div>
+                </div>
+                <div class="box">
+                  <div class="num">ROI</div>
+                  <div class="lbl">replace dead forms + bots</div>
+                </div>
+              </div>
 
-const camera = new THREE.PerspectiveCamera(
-  70,
-  window.innerWidth/window.innerHeight,
-  0.1,
-  2000
-);
-camera.position.set(0,2,18);
+              <div class="log" id="log"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-const renderer = new THREE.WebGLRenderer({antialias:true});
-renderer.setSize(window.innerWidth,window.innerHeight);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
-document.body.appendChild(renderer.domElement);
+    <div class="footer">
+      <div class="fine">
+        Keep WOW separate from the production voice build. This page is static + cinematic. Your real voice stack runs elsewhere.
+        <br/>Tip: set your “Launch Business Demo” button to your stable voice page route.
+      </div>
+      <div class="toggles">
+        <div class="chip on" id="chipCine">Cinematic</div>
+        <div class="chip on" id="chipCrack">Glass crack</div>
+        <div class="chip on" id="chipSparks">Sparks</div>
+      </div>
+    </div>
+  </div>
 
-window.addEventListener('resize',()=>{
-  camera.aspect=window.innerWidth/window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth,window.innerHeight);
-});
+  <div class="crackOverlay" id="crackOverlay"></div>
 
-/* ================= LIGHT ================= */
+  <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/postprocessing/EffectComposer.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/postprocessing/RenderPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/postprocessing/ShaderPass.js"></script>
 
-scene.add(new THREE.AmbientLight(0x404040,1.2));
+  <script>
+    // ===============================
+    // WOW CINEMATIC — SINGLE FILE
+    // Static-only. No SpeechRecognition. No backend.
+    // ===============================
 
-const dir = new THREE.DirectionalLight(0xffffff,1.4);
-dir.position.set(10,20,10);
-scene.add(dir);
+    const ui = {
+      lamp: document.getElementById("lamp"),
+      statusText: document.getElementById("statusText"),
+      log: document.getElementById("log"),
+      crackOverlay: document.getElementById("crackOverlay"),
+      btnReplay: document.getElementById("btnReplay"),
+      chipCine: document.getElementById("chipCine"),
+      chipCrack: document.getElementById("chipCrack"),
+      chipSparks: document.getElementById("chipSparks"),
+    };
 
-const impactLight = new THREE.PointLight(0x00ffff,0,30);
-impactLight.position.set(0,3,-6);
-scene.add(impactLight);
+    const state = {
+      cinematic: true,
+      crack: true,
+      sparks: true,
+      startedAt: 0,
+      impacted: false,
+      morphed: false,
+      done: false,
+      logLines: [],
+    };
 
-/* ================= WALL ================= */
+    function logLine(s) {
+      const ts = new Date().toLocaleTimeString();
+      state.logLines.push(`[${ts}] ${s}`);
+      if (state.logLines.length > 10) state.logLines.shift();
+      ui.log.textContent = state.logLines.join("\n");
+    }
 
-const wall = new THREE.Group();
-scene.add(wall);
+    function setStatus(text, live=false) {
+      ui.statusText.textContent = text;
+      ui.lamp.classList.toggle("live", !!live);
+    }
 
-const shards=[];
-const seg=20;
-const size=14/seg;
+    // -------------------------------
+    // THREE SETUP
+    // -------------------------------
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.Fog(0x000000, 16, 220);
 
-for(let x=-seg/2;x<seg/2;x++){
-  for(let y=-seg/2;y<seg/2;y++){
-    const shard=new THREE.Mesh(
-      new THREE.BoxGeometry(size,size,0.6),
-      new THREE.MeshStandardMaterial({color:0x111111,roughness:0.9})
+    const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 2000);
+    camera.position.set(0, 2.0, 18);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    document.body.insertBefore(renderer.domElement, document.body.firstChild);
+
+    // Lighting
+    scene.add(new THREE.AmbientLight(0x404040, 1.1));
+    const dir = new THREE.DirectionalLight(0xffffff, 1.35);
+    dir.position.set(10, 18, 10);
+    scene.add(dir);
+
+    const impactLight = new THREE.PointLight(0x00ffff, 0.0, 30);
+    impactLight.position.set(0, 3, -6);
+    scene.add(impactLight);
+
+    // -------------------------------
+    // Breakable wall (shards)
+    // -------------------------------
+    const wallGroup = new THREE.Group();
+    scene.add(wallGroup);
+
+    const shards = [];
+    const wallSize = 14;
+    const segments = 20;
+    const shardSize = wallSize / segments;
+
+    const wallMat = new THREE.MeshStandardMaterial({
+      color: 0x0b0b10,
+      roughness: 0.9,
+      metalness: 0.05,
+      emissive: 0x000000
+    });
+
+    for (let x = -segments/2; x < segments/2; x++) {
+      for (let y = -segments/2; y < segments/2; y++) {
+        const geo = new THREE.BoxGeometry(shardSize, shardSize, 0.55);
+        const shard = new THREE.Mesh(geo, wallMat);
+        shard.position.set(x * shardSize, y * shardSize, -6);
+        shard.userData = { vel: new THREE.Vector3(), broken: false, spin: new THREE.Vector3() };
+        wallGroup.add(shard);
+        shards.push(shard);
+      }
+    }
+
+    // -------------------------------
+    // Robotic monster
+    // -------------------------------
+    const robot = new THREE.Group();
+    scene.add(robot);
+    robot.position.set(0, 0, -8);
+    robot.scale.setScalar(0.01);
+
+    const robotMat = new THREE.MeshStandardMaterial({
+      color: 0x1a1a22,
+      emissive: 0x00ffff,
+      emissiveIntensity: 0.35,
+      metalness: 1.0,
+      roughness: 0.18
+    });
+
+    const core = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.5, 1.5, 2.6, 32),
+      robotMat
     );
-    shard.position.set(x*size,y*size,-6);
-    shard.userData={vel:new THREE.Vector3(),broken:false};
-    wall.add(shard);
-    shards.push(shard);
-  }
-}
+    robot.add(core);
 
-/* ================= ROBOT ================= */
-
-const robot=new THREE.Group();
-scene.add(robot);
-robot.position.set(0,0,-8);
-robot.scale.setScalar(0.01);
-
-const mat=new THREE.MeshStandardMaterial({
-  color:0x222222,
-  emissive:0x00ffff,
-  emissiveIntensity:0.6,
-  metalness:1,
-  roughness:0.2
-});
-
-const core=new THREE.Mesh(
-  new THREE.CylinderGeometry(1.5,1.5,2.5,32),
-  mat
-);
-robot.add(core);
-
-const arms=[];
-for(let i=0;i<6;i++){
-  const pivot=new THREE.Group();
-  const arm=new THREE.Mesh(
-    new THREE.BoxGeometry(0.4,3,0.4),
-    mat
-  );
-  arm.position.y=2;
-  pivot.add(arm);
-  pivot.rotation.y=(i/6)*Math.PI*2;
-  robot.add(pivot);
-  arms.push(pivot);
-}
-
-/* ================= SPARKS ================= */
-
-const sparkCount=200;
-const sparkGeo=new THREE.BufferGeometry();
-const sparkPos=new Float32Array(sparkCount*3);
-sparkGeo.setAttribute('position',new THREE.BufferAttribute(sparkPos,3));
-const sparkMat=new THREE.PointsMaterial({color:0xffcc00,size:0.15});
-const sparks=new THREE.Points(sparkGeo,sparkMat);
-sparks.visible=false;
-scene.add(sparks);
-const sparkVel=[];
-
-/* ================= SHOCK ================= */
-
-const shock=new THREE.Mesh(
-  new THREE.RingGeometry(0.5,0.7,64),
-  new THREE.MeshBasicMaterial({
-    color:0x00ffff,
-    side:THREE.DoubleSide,
-    transparent:true,
-    opacity:0.8
-  })
-);
-shock.rotation.x=Math.PI/2;
-shock.position.set(0,0,-5.8);
-shock.visible=false;
-scene.add(shock);
-
-/* ================= OCEAN ================= */
-
-const oceanGeo=new THREE.PlaneGeometry(400,400,100,100);
-const oceanMat=new THREE.MeshStandardMaterial({
-  color:0x001f3f,
-  wireframe:false
-});
-const ocean=new THREE.Mesh(oceanGeo,oceanMat);
-ocean.rotation.x=-Math.PI/2;
-ocean.position.y=-6;
-ocean.visible=false;
-scene.add(ocean);
-
-/* ================= SATELLITES ================= */
-
-const sats=[];
-for(let i=0;i<12;i++){
-  const sat=new THREE.Mesh(
-    new THREE.SphereGeometry(0.3,16,16),
-    new THREE.MeshStandardMaterial({color:0xffffff})
-  );
-  scene.add(sat);
-  sats.push(sat);
-}
-
-/* ================= POST FX ================= */
-
-const composer=new THREE.EffectComposer(renderer);
-composer.addPass(new THREE.RenderPass(scene,camera));
-
-const CrackShader={
-  uniforms:{
-    tDiffuse:{value:null},
-    impact:{value:new THREE.Vector2(0.5,0.5)},
-    time:{value:0},
-    strength:{value:0}
-  },
-  vertexShader:`
-    varying vec2 vUv;
-    void main(){
-      vUv=uv;
-      gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);
+    const arms = [];
+    for (let i = 0; i < 6; i++) {
+      const pivot = new THREE.Group();
+      const arm = new THREE.Mesh(
+        new THREE.BoxGeometry(0.42, 3.2, 0.42),
+        robotMat
+      );
+      arm.position.y = 2.1;
+      pivot.add(arm);
+      pivot.rotation.y = (i / 6) * Math.PI * 2;
+      robot.add(pivot);
+      arms.push(pivot);
     }
-  `,
-  fragmentShader:`
-    uniform sampler2D tDiffuse;
-    uniform vec2 impact;
-    uniform float time;
-    uniform float strength;
-    varying vec2 vUv;
 
-    void main(){
-      vec2 uv=vUv;
-      float dist=distance(uv,impact);
-      float d=strength*0.2/(dist*12.0+0.2);
-      uv+=normalize(uv-impact)*d;
+    // -------------------------------
+    // Sparks (Points)
+    // -------------------------------
+    const sparkCount = 260;
+    const sparkGeo = new THREE.BufferGeometry();
+    const sparkPositions = new Float32Array(sparkCount * 3);
+    sparkGeo.setAttribute("position", new THREE.BufferAttribute(sparkPositions, 3));
 
-      float a=atan(uv.y-impact.y,uv.x-impact.x);
-      float cracks=abs(sin(a*20.0+time*2.0));
-      cracks*=smoothstep(0.0,0.5,1.0-dist);
+    const sparkMat = new THREE.PointsMaterial({
+      color: 0xffcc55,
+      size: 0.16,
+      transparent: true,
+      opacity: 0.0
+    });
 
-      vec2 shift=normalize(uv-impact)*d*0.5;
+    const sparks = new THREE.Points(sparkGeo, sparkMat);
+    sparks.visible = false;
+    scene.add(sparks);
+    const sparkVel = new Array(sparkCount).fill(0).map(() => new THREE.Vector3());
 
-      vec4 col;
-      col.r=texture2D(tDiffuse,uv+shift).r;
-      col.g=texture2D(tDiffuse,uv).g;
-      col.b=texture2D(tDiffuse,uv-shift).b;
-      col.a=1.0;
-
-      col.rgb+=cracks*0.5*strength;
-      gl_FragColor=col;
-    }
-  `
-};
-
-const crackPass=new THREE.ShaderPass(CrackShader);
-composer.addPass(crackPass);
-
-/* ================= IMPACT ================= */
-
-function impact(){
-  robot.scale.setScalar(1);
-  robot.position.z=-5.8;
-  impactLight.intensity=6;
-  shock.visible=true;
-  shock.scale.setScalar(0.1);
-  shock.material.opacity=1;
-  sparks.visible=true;
-
-  for(let i=0;i<sparkCount;i++){
-    sparkVel[i]=new THREE.Vector3(
-      (Math.random()-0.5)*12,
-      Math.random()*12,
-      (Math.random()-0.5)*12
+    // -------------------------------
+    // Shockwave
+    // -------------------------------
+    const shock = new THREE.Mesh(
+      new THREE.RingGeometry(0.5, 0.75, 64),
+      new THREE.MeshBasicMaterial({
+        color: 0x00ffff,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.0
+      })
     );
-  }
+    shock.rotation.x = Math.PI / 2;
+    shock.position.set(0, 0, -5.8);
+    shock.visible = false;
+    scene.add(shock);
 
-  shards.forEach(s=>{
-    const d=s.position.distanceTo(robot.position);
-    if(d<5){
-      s.userData.broken=true;
-      s.userData.vel=
-        s.position.clone().sub(robot.position)
-        .normalize().multiplyScalar(10+Math.random()*5);
+    // -------------------------------
+    // Ocean
+    // -------------------------------
+    const oceanGeo = new THREE.PlaneGeometry(420, 420, 120, 120);
+    const oceanMat = new THREE.MeshStandardMaterial({
+      color: 0x001423,
+      metalness: 0.05,
+      roughness: 0.85
+    });
+    const ocean = new THREE.Mesh(oceanGeo, oceanMat);
+    ocean.rotation.x = -Math.PI / 2;
+    ocean.position.y = -6.2;
+    ocean.visible = false;
+    scene.add(ocean);
+
+    // -------------------------------
+    // Satellites
+    // -------------------------------
+    const sats = [];
+    const satMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.45, metalness: 0.2, emissive: 0x000000 });
+    for (let i = 0; i < 14; i++) {
+      const sat = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 16), satMat);
+      sat.visible = false;
+      scene.add(sat);
+      sats.push(sat);
     }
-  });
 
-  crackPass.uniforms.strength.value=1;
-}
+    // -------------------------------
+    // Postprocessing: Glass crack distortion pass
+    // -------------------------------
+    const composer = new THREE.EffectComposer(renderer);
+    composer.addPass(new THREE.RenderPass(scene, camera));
 
-/* ================= MORPH ================= */
+    const GlassCrackShader = {
+      uniforms: {
+        tDiffuse: { value: null },
+        impact: { value: new THREE.Vector2(0.5, 0.5) },
+        time: { value: 0 },
+        strength: { value: 0 }
+      },
+      vertexShader: `
+        varying vec2 vUv;
+        void main(){
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform sampler2D tDiffuse;
+        uniform vec2 impact;
+        uniform float time;
+        uniform float strength;
+        varying vec2 vUv;
 
-let morphed=false;
+        void main() {
+          vec2 uv = vUv;
 
-function morphToBird(){
-  robot.children.forEach(c=>{
-    if(c.geometry) c.geometry.dispose();
-  });
-  robot.clear();
+          float dist = distance(uv, impact);
+          vec2 dir = normalize(uv - impact);
 
-  const bird=new THREE.Mesh(
-    new THREE.ConeGeometry(1.5,4,32),
-    new THREE.MeshStandardMaterial({
-      color:0xffffff,
-      emissive:0x00ffff,
-      emissiveIntensity:0.5
-    })
-  );
-  bird.rotation.z=Math.PI;
-  robot.add(bird);
+          // refraction/distortion
+          float warp = strength * 0.22 / (dist * 12.0 + 0.25);
+          uv += dir * warp;
 
-  morphed=true;
-}
+          // radial crack streaks
+          float ang = atan(uv.y - impact.y, uv.x - impact.x);
+          float streak = abs(sin(ang * 26.0 + time * 2.2));
+          streak *= smoothstep(0.0, 0.55, 1.0 - dist);
+          streak *= strength;
 
-/* ================= LOOP ================= */
+          // slight chromatic shift
+          vec2 shift = dir * warp * 0.6;
+          vec4 col;
+          col.r = texture2D(tDiffuse, uv + shift).r;
+          col.g = texture2D(tDiffuse, uv).g;
+          col.b = texture2D(tDiffuse, uv - shift).b;
+          col.a = 1.0;
 
-const clock=new THREE.Clock();
-let hitTime=2;
+          col.rgb += streak * 0.55;
+          gl_FragColor = col;
+        }
+      `
+    };
 
-function animate(){
-  requestAnimationFrame(animate);
+    const crackPass = new THREE.ShaderPass(GlassCrackShader);
+    composer.addPass(crackPass);
 
-  const dt=clock.getDelta();
-  const t=clock.elapsedTime;
+    // -------------------------------
+    // Cinematic controls / toggles
+    // -------------------------------
+    function setChip(el, on) { el.classList.toggle("on", !!on); }
 
-  if(t>hitTime && robot.scale.x<1){
-    impact();
-  }
+    ui.chipCine.addEventListener("click", () => {
+      state.cinematic = !state.cinematic;
+      setChip(ui.chipCine, state.cinematic);
+      logLine(`Cinematic: ${state.cinematic ? "ON" : "OFF"}`);
+    });
+    ui.chipCrack.addEventListener("click", () => {
+      state.crack = !state.crack;
+      setChip(ui.chipCrack, state.crack);
+      ui.crackOverlay.classList.toggle("on", state.crack && state.impacted);
+      logLine(`Glass crack: ${state.crack ? "ON" : "OFF"}`);
+    });
+    ui.chipSparks.addEventListener("click", () => {
+      state.sparks = !state.sparks;
+      setChip(ui.chipSparks, state.sparks);
+      logLine(`Sparks: ${state.sparks ? "ON" : "OFF"}`);
+    });
 
-  arms.forEach((a,i)=>{
-    a.rotation.z=Math.sin(t*3+i)*0.5;
-  });
+    // -------------------------------
+    // Impact sequence
+    // -------------------------------
+    function triggerImpact() {
+      if (state.impacted) return;
+      state.impacted = true;
 
-  core.rotation.y+=0.02;
+      // Robot comes forward
+      robot.scale.setScalar(1);
+      robot.position.z = -5.8;
 
-  shards.forEach(s=>{
-    if(s.userData.broken){
-      s.position.add(s.userData.vel.clone().multiplyScalar(dt));
-      s.userData.vel.y-=9.8*dt;
-      s.rotation.x+=0.2;
-      s.rotation.y+=0.3;
+      // Lights
+      impactLight.intensity = 5.8;
+
+      // Shockwave
+      shock.visible = true;
+      shock.scale.setScalar(0.12);
+      shock.material.opacity = 1.0;
+
+      // Sparks
+      if (state.sparks) {
+        sparks.visible = true;
+        sparkMat.opacity = 1.0;
+        const pos = sparks.geometry.attributes.position;
+        for (let i = 0; i < sparkCount; i++) {
+          pos.array[i*3+0] = 0;
+          pos.array[i*3+1] = 0.6;
+          pos.array[i*3+2] = -5.6;
+          sparkVel[i].set(
+            (Math.random() - 0.5) * 14,
+            (Math.random() * 12),
+            (Math.random() - 0.5) * 14
+          );
+        }
+        pos.needsUpdate = true;
+      }
+
+      // Break wall shards near impact
+      for (const s of shards) {
+        const d = s.position.distanceTo(robot.position);
+        if (d < 5.0) {
+          s.userData.broken = true;
+          const dir = s.position.clone().sub(robot.position).normalize();
+          s.userData.vel = dir.multiplyScalar(10 + Math.random() * 7);
+          s.userData.vel.y += Math.random() * 4;
+          s.userData.spin.set(
+            (Math.random() - 0.5) * 4,
+            (Math.random() - 0.5) * 4,
+            (Math.random() - 0.5) * 4
+          );
+        }
+      }
+
+      // Shader crack
+      if (state.crack) {
+        crackPass.uniforms.strength.value = 1.0;
+        ui.crackOverlay.classList.add("on");
+      }
+
+      logLine("Impact: wall breach + glass crack");
+      setStatus("Impact event fired", true);
     }
-  });
 
-  if(shock.visible){
-    shock.scale.multiplyScalar(1.12);
-    shock.material.opacity*=0.92;
-  }
+    function morphToBird() {
+      if (state.morphed) return;
+      state.morphed = true;
 
-  if(sparks.visible){
-    const pos=sparks.geometry.attributes.position;
-    for(let i=0;i<sparkCount;i++){
-      pos.array[i*3]+=sparkVel[i].x*dt;
-      pos.array[i*3+1]+=sparkVel[i].y*dt;
-      pos.array[i*3+2]+=sparkVel[i].z*dt;
-      sparkVel[i].y-=9.8*dt;
+      // Replace robot contents with bird-ish form
+      robot.clear();
+      const birdBody = new THREE.Mesh(
+        new THREE.ConeGeometry(1.3, 4.0, 24),
+        new THREE.MeshStandardMaterial({
+          color: 0xffffff,
+          emissive: 0x00ffff,
+          emissiveIntensity: 0.28,
+          metalness: 0.25,
+          roughness: 0.35
+        })
+      );
+      birdBody.rotation.z = Math.PI;
+      robot.add(birdBody);
+
+      const wingMat = new THREE.MeshStandardMaterial({ color: 0xe8fbff, emissive: 0x003333, emissiveIntensity: 0.18, roughness: 0.6, metalness: 0.1 });
+      const wingGeo = new THREE.BoxGeometry(3.2, 0.14, 0.8);
+
+      const wingL = new THREE.Mesh(wingGeo, wingMat);
+      const wingR = new THREE.Mesh(wingGeo, wingMat);
+      wingL.position.set(-2.2, 0.2, 0);
+      wingR.position.set( 2.2, 0.2, 0);
+
+      const wingLPivot = new THREE.Group();
+      const wingRPivot = new THREE.Group();
+      wingLPivot.add(wingL);
+      wingRPivot.add(wingR);
+      wingLPivot.position.set(0, 0.5, 0);
+      wingRPivot.position.set(0, 0.5, 0);
+      birdBody.add(wingLPivot);
+      birdBody.add(wingRPivot);
+
+      robot.userData.wingLPivot = wingLPivot;
+      robot.userData.wingRPivot = wingRPivot;
+
+      logLine("Morph: robot → bird");
+      setStatus("Morph complete", true);
     }
-    pos.needsUpdate=true;
-  }
 
-  crackPass.uniforms.time.value+=dt;
-  if(crackPass.uniforms.strength.value>0){
-    crackPass.uniforms.strength.value*=0.95;
-  }
+    function showOceanAndSatellites() {
+      ocean.visible = true;
+      for (const s of sats) s.visible = true;
+      logLine("Reveal: ocean + satellites");
+      setStatus("Environment revealed", true);
+    }
 
-  if(t>5 && !morphed){
-    ocean.visible=true;
-    morphToBird();
-  }
+    // -------------------------------
+    // Timeline
+    // -------------------------------
+    const clock = new THREE.Clock();
+    state.startedAt = performance.now();
 
-  if(morphed){
-    robot.position.y+=dt*4;
-    robot.position.z+=dt*6;
-  }
+    function resetSequence() {
+      // Reset state
+      state.impacted = false;
+      state.morphed = false;
+      state.done = false;
+      crackPass.uniforms.strength.value = 0;
+      ui.crackOverlay.classList.remove("on");
 
-  sats.forEach((s,i)=>{
-    const angle=t*0.5+i;
-    s.position.set(
-      Math.cos(angle)*20,
-      Math.sin(angle*0.5)*5+10,
-      Math.sin(angle)*20
-    );
-  });
+      // Reset robot
+      robot.clear();
+      robot.add(core);
+      for (const p of arms) robot.add(p);
+      robot.position.set(0, 0, -8);
+      robot.scale.setScalar(0.01);
 
-  const verts=ocean.geometry.attributes.position;
-  for(let i=0;i<verts.count;i++){
-    const x=verts.getX(i);
-    const y=verts.getY(i);
-    verts.setZ(i,Math.sin(t*2+x*0.1+y*0.1)*0.5);
-  }
-  verts.needsUpdate=true;
+      // Reset shards
+      for (const s of shards) {
+        s.userData.broken = false;
+        s.userData.vel.set(0,0,0);
+        s.userData.spin.set(0,0,0);
+        // Restore original position grid
+        // (positions already correct unless previous physics moved them)
+      }
+      // Rebuild shard grid positions cleanly
+      let idx = 0;
+      for (let x = -segments/2; x < segments/2; x++) {
+        for (let y = -segments/2; y < segments/2; y++) {
+          const shard = shards[idx++];
+          shard.position.set(x * shardSize, y * shardSize, -6);
+          shard.rotation.set(0,0,0);
+        }
+      }
 
-  composer.render();
-}
+      // Reset sparks
+      sparks.visible = false;
+      sparkMat.opacity = 0;
+      // Reset shock
+      shock.visible = false;
+      shock.material.opacity = 0;
 
-animate();
+      // Reset env
+      ocean.visible = false;
+      for (const s of sats) s.visible = false;
 
-</script>
+      // Reset lights/cam
+      impactLight.intensity = 0;
+      camera.position.set(0, 2.0, 18);
+
+      clock.elapsedTime = 0;
+      logLine("Replay: sequence reset");
+      setStatus("Cinematic demo armed", false);
+    }
+
+    ui.btnReplay.addEventListener("click", () => resetSequence());
+
+    // -------------------------------
+    // Animation loop
+    // -------------------------------
+    let recoil = 0;
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = clock.getDelta();
+      const t = clock.elapsedTime;
+
+      // Robot idle
+      if (!state.morphed) {
+        core.rotation.y += dt * 1.2;
+        core.rotation.x += dt * 0.4;
+        for (let i = 0; i < arms.length; i++) {
+          arms[i].rotation.z = Math.sin(t * 3.2 + i) * 0.55;
+        }
+      } else {
+        // Bird wings
+        const wl = robot.userData.wingLPivot;
+        const wr = robot.userData.wingRPivot;
+        if (wl && wr) {
+          const flap = Math.sin(t * 6.0) * 0.55;
+          wl.rotation.z = flap;
+          wr.rotation.z = -flap;
+        }
+      }
+
+      // Timeline triggers
+      if (state.cinematic) {
+        if (t > 2.0 && !state.impacted) {
+          triggerImpact();
+          recoil = 1.0;
+        }
+        if (t > 5.2 && !state.morphed) {
+          showOceanAndSatellites();
+          morphToBird();
+        }
+        if (t > 7.0 && state.morphed && !state.done) {
+          state.done = true;
+          logLine("Sequence: flyout");
+          setStatus("Flyout engaged", true);
+        }
+      } else {
+        // Non-cinematic mode: show environment and idle robot
+        ocean.visible = true;
+        for (const s of sats) s.visible = true;
+        if (!state.impacted) {
+          robot.scale.setScalar(1);
+          robot.position.z = -6.8;
+        }
+      }
+
+      // Physics: shards
+      for (const s of shards) {
+        if (!s.userData.broken) continue;
+        s.position.addScaledVector(s.userData.vel, dt);
+        s.userData.vel.y -= 9.8 * dt;
+        s.rotation.x += s.userData.spin.x * dt;
+        s.rotation.y += s.userData.spin.y * dt;
+        s.rotation.z += s.userData.spin.z * dt;
+      }
+
+      // Sparks physics
+      if (sparks.visible && state.sparks) {
+        const pos = sparks.geometry.attributes.position;
+        for (let i = 0; i < sparkCount; i++) {
+          pos.array[i*3+0] += sparkVel[i].x * dt;
+          pos.array[i*3+1] += sparkVel[i].y * dt;
+          pos.array[i*3+2] += sparkVel[i].z * dt;
+          sparkVel[i].y -= 10.6 * dt;
+        }
+        pos.needsUpdate = true;
+        sparkMat.opacity *= Math.pow(0.90, dt * 60);
+        if (sparkMat.opacity < 0.02) sparks.visible = false;
+      }
+
+      // Shockwave
+      if (shock.visible) {
+        shock.scale.multiplyScalar(1.0 + dt * 1.9);
+        shock.material.opacity *= Math.pow(0.90, dt * 60);
+        if (shock.material.opacity < 0.02) shock.visible = false;
+      }
+
+      // Light flicker after impact
+      if (state.impacted) {
+        impactLight.intensity = 4.0 + Math.random() * 2.0;
+      } else {
+        impactLight.intensity *= Math.pow(0.92, dt * 60);
+      }
+
+      // Post crack decay
+      crackPass.uniforms.time.value += dt;
+      if (crackPass.uniforms.strength.value > 0) {
+        crackPass.uniforms.strength.value *= Math.pow(0.94, dt * 60);
+        if (crackPass.uniforms.strength.value < 0.04) {
+          crackPass.uniforms.strength.value = 0;
+          ui.crackOverlay.classList.toggle("on", false);
+        }
+      }
+
+      // Ocean waves
+      if (ocean.visible) {
+        const verts = ocean.geometry.attributes.position;
+        for (let i = 0; i < verts.count; i++) {
+          const x = verts.getX(i);
+          const y = verts.getY(i);
+          const z = Math.sin((t * 2.0) + (x * 0.06) + (y * 0.06)) * 0.55;
+          verts.setZ(i, z);
+        }
+        verts.needsUpdate = true;
+        ocean.geometry.computeVertexNormals();
+      }
+
+      // Satellites orbit
+      if (sats.length) {
+        for (let i = 0; i < sats.length; i++) {
+          const a = t * 0.55 + i * 0.7;
+          sats[i].position.set(
+            Math.cos(a) * 22,
+            Math.sin(a * 0.7) * 6 + 10,
+            Math.sin(a) * 22
+          );
+        }
+      }
+
+      // Flyout motion
+      if (state.done && state.morphed) {
+        robot.position.y += dt * 3.6;
+        robot.position.z += dt * 6.5;
+        robot.rotation.y += dt * 0.6;
+        // Camera gently follows
+        camera.position.z = 18 + Math.sin(t * 0.25) * 0.25;
+      }
+
+      // Camera recoil
+      if (recoil > 0) {
+        camera.position.x = (Math.random() - 0.5) * recoil * 0.35;
+        camera.position.y = 2.0 + (Math.random() - 0.5) * recoil * 0.25;
+        recoil *= Math.pow(0.90, dt * 60);
+        if (recoil < 0.02) {
+          recoil = 0;
+          camera.position.x = 0;
+          camera.position.y = 2.0;
+        }
+      }
+
+      composer.render();
+    }
+
+    // Resize handling
+    function onResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      composer.setSize(window.innerWidth, window.innerHeight);
+    }
+    window.addEventListener("resize", onResize);
+
+    // Start
+    logLine("WOW page loaded");
+    setStatus("Cinematic demo armed", false);
+    ui.lamp.classList.add("live");
+    animate();
+  </script>
 </body>
 </html>
+```0
