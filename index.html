@@ -1,241 +1,146 @@
-<!doctype html>
-<html lang="en">
+
+<!DOCTYPE html>
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Customer Care AI — Hands-Free Voice</title>
-  <style>
-    :root { color-scheme: dark; }
-    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:#0b0b0b; color:#fff; }
-    .wrap { width:min(980px, 94vw); margin:20px auto; padding:18px; border-radius:18px; background:#121212; box-shadow:0 18px 60px rgba(0,0,0,.65); }
-    .top { display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
-    .title { font-weight:800; font-size:20px; }
-    .controls { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-    .btn { border:0; border-radius:12px; padding:10px 14px; font-weight:700; cursor:pointer; }
-    .btn.primary { background:#ffb020; color:#111; }
-    .btn.ghost { background:#2a2a2a; color:#fff; }
-    .pill { background:#232323; padding:8px 12px; border-radius:999px; font-weight:700; opacity:.95; }
-    .panel { margin-top:14px; background:#0f0f0f; border:1px solid #222; border-radius:16px; padding:14px; }
-    #log { height:260px; overflow:auto; background:#0b0b0b; border:1px solid #222; border-radius:12px; padding:10px; }
-    .line { margin:0 0 8px 0; opacity:.95; }
-    .sys { color:#ff6b6b; }
-    .you { color:#9ad1ff; }
-    .ai  { color:#9cffb6; }
-    .hint { opacity:.8; margin-top:10px; font-size:13px; }
-    .grid { display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:14px; }
-    .grid input, .grid textarea {
-      width:100%; box-sizing:border-box;
-      background:#101010; border:1px solid #2a2a2a; color:#fff;
-      border-radius:12px; padding:10px 12px; outline:none;
-    }
-    .grid textarea { grid-column: 1 / -1; min-height:90px; resize:vertical; }
-    @media (max-width:780px) { .grid { grid-template-columns: 1fr; } }
-  </style>
+<meta charset="UTF-8">
+<title>Customer Care AI – WOW</title>
+<style>
+body{margin:0;overflow:hidden;background:#000;font-family:sans-serif;}
+canvas{display:block;}
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="top">
-      <div class="title">Customer Care AI — Hands-Free Voice</div>
-      <div class="controls">
-        <button id="enableBtn" class="btn primary">Enable Voice (1x)</button>
-        <button id="stopBtn" class="btn ghost">Stop</button>
-        <div id="statusPill" class="pill">Status: idle</div>
-      </div>
-    </div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.min.js"></script>
 
-    <div class="panel">
-      <div style="font-weight:800; margin-bottom:8px;">Conversation</div>
-      <div id="log" aria-live="polite"></div>
-      <div class="hint">
-        Goal: press Enable once → speak → it auto-sends after you stop talking → reply → goes back to listening.
-      </div>
-    </div>
+<script>
 
-    <div class="panel">
-      <div style="font-weight:800; margin-bottom:8px;">Lead Capture (optional)</div>
-      <div class="grid">
-        <input id="first" placeholder="First name" autocomplete="given-name" />
-        <input id="last" placeholder="Last name" autocomplete="family-name" />
-        <input id="email" placeholder="Email" autocomplete="email" />
-        <input id="phone" placeholder="Phone" autocomplete="tel" />
-        <textarea id="notes" placeholder="Notes"></textarea>
-      </div>
-      <button class="btn ghost" style="width:100%; margin-top:10px;" id="submitLead">Submit</button>
-    </div>
-  </div>
+// ---------------- SCENE SETUP ----------------
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 1000);
+camera.position.z = 20;
 
-  <script>
-    // ---------- Helpers ----------
-    const $ = (id) => document.getElementById(id);
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth, innerHeight);
+document.body.appendChild(renderer.domElement);
 
-    const logEl = $("log");
-    const statusPill = $("statusPill");
-    function setStatus(t){ statusPill.textContent = "Status: " + t; }
+window.addEventListener('resize',()=>{
+camera.aspect = innerWidth/innerHeight;
+camera.updateProjectionMatrix();
+renderer.setSize(innerWidth, innerHeight);
+});
 
-    function addLine(kind, text){
-      const p = document.createElement("p");
-      p.className = "line " + kind;
-      p.textContent = (kind === "sys" ? "System: " : kind === "you" ? "You: " : "AI: ") + text;
-      logEl.appendChild(p);
-      logEl.scrollTop = logEl.scrollHeight;
-    }
+// ---------------- OCEAN + SUNSET ----------------
+const skyGeo = new THREE.SphereGeometry(200,32,32);
+const skyMat = new THREE.MeshBasicMaterial({
+color:0x0b1020,
+side:THREE.BackSide
+});
+const sky = new THREE.Mesh(skyGeo, skyMat);
+scene.add(sky);
 
-    // ---------- Speech Recognition (Android Chrome safe) ----------
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    let rec = null;
+const sun = new THREE.Mesh(
+new THREE.SphereGeometry(10,32,32),
+new THREE.MeshBasicMaterial({color:0xff6600})
+);
+sun.position.set(0,-20,-100);
+scene.add(sun);
 
-    let enabled = false;
-    let inLoop = false;        // prevents double start
-    let finalText = "";
-    let lastHeardAt = 0;
-    let silenceTimer = null;
+// ---------------- MONSTER ----------------
+const monster = new THREE.Mesh(
+new THREE.BoxGeometry(6,6,6),
+new THREE.MeshStandardMaterial({color:0x00ffff})
+);
+monster.position.z = -20;
+scene.add(monster);
 
-    const END_SILENCE_MS = 900;  // auto-send after you stop talking
-    const RESTART_DELAY_MS = 250;
+const light = new THREE.PointLight(0xffffff,2);
+light.position.set(10,20,20);
+scene.add(light);
 
-    function clearSilenceTimer(){
-      if(silenceTimer){ clearTimeout(silenceTimer); silenceTimer = null; }
-    }
+// ---------------- DOOR ----------------
+const door = new THREE.Mesh(
+new THREE.BoxGeometry(6,10,0.5),
+new THREE.MeshStandardMaterial({color:0x111111})
+);
+door.position.set(0,0,-28);
+door.visible = false;
+scene.add(door);
 
-    function scheduleSendAfterSilence(){
-      clearSilenceTimer();
-      silenceTimer = setTimeout(() => {
-        // if we haven't heard anything recently, treat as end-of-utterance
-        const now = Date.now();
-        if(now - lastHeardAt >= END_SILENCE_MS - 50){
-          stopListeningAndSend();
-        }
-      }, END_SILENCE_MS);
-    }
+// ---------------- CONSTELLATION ----------------
+const sats=[];
+for(let i=0;i<18;i++){
+const s=new THREE.Mesh(
+new THREE.SphereGeometry(0.5,16,16),
+new THREE.MeshStandardMaterial({color:0x00ffff, emissive:0x00ffff})
+);
+s.userData.orbitR=8+Math.random()*6;
+s.userData.phase=Math.random()*Math.PI*2;
+s.userData.speed=0.2+Math.random()*0.3;
+s.userData.y=(Math.random()-0.5)*6;
+s.visible=false;
+scene.add(s);
+sats.push(s);
+}
 
-    function supportsSpeech(){
-      return !!SpeechRecognition;
-    }
+// ---------------- TIMELINE ----------------
+let t=0;
+let phase=0;
 
-    function buildRec(){
-      const r = new SpeechRecognition();
-      r.lang = "en-AU";
-      r.interimResults = true;
-      r.continuous = true; // best chance on Android; may still behave as non-continuous.
-      return r;
-    }
+function animate(){
+requestAnimationFrame(animate);
+t+=0.016;
 
-    function startListening(){
-      if(!enabled) return;
-      if(!rec) rec = buildRec();
-      if(inLoop) return;
+// PHASE 0 – MONSTER BURST
+if(phase===0){
+monster.position.z+=0.5;
+monster.rotation.x+=0.1;
+monster.rotation.y+=0.1;
+if(monster.position.z>5){
+phase=1;
+}
+}
 
-      try{
-        finalText = "";
-        inLoop = true;
-        setStatus("listening");
-        addLine("sys", "Mic is LIVE. Speak naturally.");
+// PHASE 1 – SHRINK INTO BIRD
+if(phase===1){
+monster.scale.multiplyScalar(0.95);
+monster.position.y+=0.2;
+monster.position.z-=0.3;
+if(monster.scale.x<0.2){
+monster.visible=false;
+door.visible=true;
+phase=2;
+}
+}
 
-        rec.onresult = (event) => {
-          lastHeardAt = Date.now();
-          scheduleSendAfterSilence();
+// PHASE 2 – DOOR WAIT THEN OPEN
+if(phase===2){
+if(t>8){
+door.rotation.y+=0.02;
+if(door.rotation.y>1.2){
+phase=3;
+sats.forEach(s=>s.visible=true);
+}
+}
+}
 
-          let interim = "";
-          for(let i = event.resultIndex; i < event.results.length; i++){
-            const txt = event.results[i][0].transcript;
-            if(event.results[i].isFinal) finalText += (finalText ? " " : "") + txt.trim();
-            else interim += txt;
-          }
-          // We don't print interim every time (avoids spam). We only print when sending.
-        };
+// PHASE 3 – CONSTELLATION ORBIT
+if(phase===3){
+for(let s of sats){
+let a=t*s.userData.speed+s.userData.phase;
+let R=s.userData.orbitR;
+s.position.set(
+Math.cos(a)*R,
+s.userData.y,
+-28+Math.sin(a)*R
+);
+}
+}
 
-        rec.onerror = (e) => {
-          inLoop = false;
-          clearSilenceTimer();
-          setStatus("error");
-          addLine("sys", "Voice error: " + (e && e.error ? e.error : "unknown"));
-        };
+renderer.render(scene,camera);
+}
 
-        rec.onend = () => {
-          // Android sometimes ends the mic automatically. If still enabled, restart.
-          clearSilenceTimer();
-          inLoop = false;
-          if(enabled){
-            setStatus("restarting");
-            setTimeout(() => {
-              if(enabled) startListening();
-            }, RESTART_DELAY_MS);
-          } else {
-            setStatus("idle");
-          }
-        };
+animate();
 
-        rec.start();
-      } catch(err){
-        inLoop = false;
-        clearSilenceTimer();
-        setStatus("error");
-        addLine("sys", "Start failed: " + (err && err.message ? err.message : String(err)));
-      }
-    }
-
-    function stopListeningHard(){
-      enabled = false;
-      clearSilenceTimer();
-      try { rec && rec.stop && rec.stop(); } catch {}
-      setStatus("idle");
-    }
-
-    function stopListeningAndSend(){
-      // stop the mic first (prevents it capturing its own output)
-      clearSilenceTimer();
-      const text = (finalText || "").trim();
-      finalText = "";
-
-      // Some Android builds need stop() to finalize; we stop either way.
-      try { rec && rec.stop && rec.stop(); } catch {}
-
-      if(text){
-        addLine("you", text);
-        // TODO: wire to /api/chat later.
-        addLine("ai", "OK — received. (Next: connect to /api/chat)");
-      } else {
-        addLine("sys", "No speech captured. If this repeats: check site mic permission + HTTPS + not in incognito.");
-      }
-    }
-
-    // ---------- UI ----------
-    $("enableBtn").addEventListener("click", async () => {
-      if(!supportsSpeech()){
-        addLine("sys", "SpeechRecognition not supported on this browser.");
-        return;
-      }
-      if(enabled){
-        addLine("sys", "Already enabled. If it’s stuck, press Stop then Enable once.");
-        return;
-      }
-
-      // Must be user-gesture on mobile: click -> start.
-      enabled = true;
-      setStatus("permission/listening");
-      addLine("sys", "Voice enabled. Hands-free loop is ON.");
-      startListening();
-    });
-
-    $("stopBtn").addEventListener("click", () => {
-      stopListeningHard();
-      addLine("sys", "Stopped.");
-    });
-
-    $("submitLead").addEventListener("click", () => {
-      const payload = {
-        first: $("first").value.trim(),
-        last: $("last").value.trim(),
-        email: $("email").value.trim(),
-        phone: $("phone").value.trim(),
-        notes: $("notes").value.trim(),
-      };
-      addLine("sys", "Lead saved locally (demo): " + JSON.stringify(payload));
-    });
-
-    // Initial
-    setStatus("idle");
-    addLine("sys", "Tap Enable Voice once. Don’t tap repeatedly.");
-  </script>
+</script>
 </body>
-</html> 
+</html>
