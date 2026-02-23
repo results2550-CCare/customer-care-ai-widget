@@ -1,108 +1,362 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Cinematic Experience</title>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/loaders/GLTFLoader.js"></script>
-    <style>
-        body { margin: 0; overflow: hidden; }
-        canvas { display: block; }
-        #inputBox {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 100;
-            padding: 20px;
-            background: rgba(255,255,255,0.8);
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-        }
-        #door {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) scale(0);
-            width: 300px;
-            height: 500px;
-            background: linear-gradient(45deg, #1a1a2e, #16213e);
-            border: 5px solid #fff;
-            border-radius: 10px;
-            z-index: 200;
-            transition: transform 2s ease-out;
-            box-shadow: 0 0 50px rgba(0,255,255,0.7);
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>3D Cinematic Experience — Voice Only</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/loaders/GLTFLoader.js"></script>
+
+  <style>
+    body { margin:0; overflow:hidden; background:#000; }
+    canvas { display:block; }
+
+    /* Voice HUD */
+    #hud{
+      position:fixed; top:16px; left:16px; right:16px; z-index:999;
+      display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+      font-family:Arial,system-ui,sans-serif;
+    }
+    .btn{
+      border:0; border-radius:12px; padding:10px 14px;
+      font-weight:800; cursor:pointer;
+    }
+    .primary{ background:#ffb020; color:#111; }
+    .ghost{ background:#2a2a2a; color:#fff; }
+    .pill{
+      background:rgba(20,20,20,.88);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:999px;
+      padding:8px 12px;
+      font-size:13px;
+      font-weight:800;
+      color:#fff;
+      white-space:nowrap;
+    }
+
+    /* Lead input (destroyed) */
+    #inputBox{
+      position:fixed; top:50%; left:50%;
+      transform:translate(-50%, -50%) scale(1);
+      z-index:300;
+      padding:18px;
+      background:rgba(255,255,255,0.86);
+      border-radius:14px;
+      box-shadow:0 0 30px rgba(0,0,0,0.65);
+      will-change: transform, opacity;
+    }
+    #leadInput{
+      width:min(380px, 74vw);
+      padding:12px 14px;
+      border-radius:12px;
+      border:1px solid rgba(0,0,0,.2);
+      outline:none;
+      font-size:16px;
+    }
+
+    /* Door */
+    #door{
+      position:fixed;
+      top:50%; left:50%;
+      transform:translate(-50%, -50%) scale(0);
+      width:320px; height:520px;
+      background:linear-gradient(45deg, #1a1a2e, #16213e);
+      border:4px solid rgba(255,255,255,.86);
+      border-radius:14px;
+      z-index:350;
+      transition:transform 1100ms ease-out;
+      box-shadow:0 0 60px rgba(0,255,255,0.55);
+    }
+  </style>
 </head>
+
 <body>
-    <div id="inputBox">
-        <input type="text" placeholder="Enter your email..." id="leadInput">
-    </div>
-    <div id="door"></div>
+  <div id="hud">
+    <button id="btnStartVoice" class="btn primary">Start Voice</button>
+    <button id="btnStopVoice" class="btn ghost">Stop</button>
+    <div id="status" class="pill">Status: idle</div>
+  </div>
 
-    <script>
-        // Initialize scene
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
+  <div id="inputBox">
+    <input id="leadInput" type="text" placeholder="Enter your email..." />
+  </div>
 
-        // Add lighting
-        const light = new THREE.AmbientLight(0x404040);
-        scene.add(light);
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-        directionalLight.position.set(1, 1, 1);
-        scene.add(directionalLight);
+  <div id="door"></div>
 
-        // Audio context for voice interaction
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        const recognition = new SpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = true;
+  <!-- OpenAI audio out -->
+  <audio id="remoteAudio" autoplay></audio>
 
-        // 2 second delay
-        setTimeout(() => {
-            // Load robot monster model
-            const loader = new THREE.GLTFLoader();
-            loader.load(
-                'https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/examples/models/gltf/Parrot.glb',
-                (gltf) => {
-                    const robot = gltf.scene;
-                    scene.add(robot);
-                    
-                    // Animate robot tearing apart input box
-                    const inputBox = document.getElementById('inputBox');
-                    let scale = 1;
-                    const shrinkInterval = setInterval(() => {
-                        scale -= 0.05;
-                        inputBox.style.transform = `translate(-50%, -50%) scale(${scale})`;
-                        if (scale <= 0) {
-                            clearInterval(shrinkInterval);
-                            inputBox.remove();
-                            
-                            // Show door
-                            const door = document.getElementById('door');
-                            door.style.transform = 'translate(-50%, -50%) scale(1)';
-                            
-                            // Create orbiting satellites
-                            createSatellites();
-                            
-                            // Morph robot into bird
-                            setTimeout(() => {
-                                // Add ocean background
-                                const geometry = new THREE.PlaneGeometry(200, 200);
-                                const texture = new THREE.TextureLoader().load('https://threejs.org/examples/textures/waternormals.jpg');
-                                const material = new THREE.MeshBasicMaterial({ map: texture });
-                                const ocean = new THREE.Mesh(geometry, material);
-                                scene.add(ocean);
-                                
-                                // Fly away animation
-                                let birdY = 0;
-                                const flyInterval = setInterval(() => {
-                                    birdY += 0.5;
-                                    robot.position
+<script>
+(() => {
+  // =========================================================
+  // THREE.JS SCENE (CINEMATIC)
+  // =========================================================
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(0x000000, 30, 220);
+
+  const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 2000);
+  camera.position.set(0, 8, 22);
+
+  const renderer = new THREE.WebGLRenderer({ antialias:true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  document.body.appendChild(renderer.domElement);
+
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.enablePan = false;
+  controls.minDistance = 10;
+  controls.maxDistance = 65;
+  controls.maxPolarAngle = Math.PI * 0.47;
+
+  scene.add(new THREE.AmbientLight(0x404040, 1.3));
+  const dir = new THREE.DirectionalLight(0xffffff, 1.2);
+  dir.position.set(10, 15, 8);
+  scene.add(dir);
+
+  // Simple sky sphere
+  const sky = new THREE.Mesh(
+    new THREE.SphereGeometry(600, 32, 16),
+    new THREE.MeshBasicMaterial({ color: 0x05070f, side: THREE.BackSide })
+  );
+  scene.add(sky);
+
+  // Satellites (orbiting particles)
+  const satellites = [];
+  function createSatellites() {
+    const g = new THREE.SphereGeometry(0.25, 16, 16);
+    const m = new THREE.MeshStandardMaterial({ color:0x00ffff, emissive:0x003333, roughness:0.25, metalness:0.1 });
+    for (let i = 0; i < 18; i++) {
+      const s = new THREE.Mesh(g, m);
+      s.userData = {
+        radius: 4 + Math.random() * 3,
+        speed: 0.7 + Math.random() * 1.0,
+        phase: Math.random() * Math.PI * 2,
+        height: -0.3 + Math.random() * 2.2
+      };
+      satellites.push(s);
+      scene.add(s);
+    }
+  }
+
+  // Ocean (appears later)
+  let ocean = null;
+  function addOcean() {
+    if (ocean) return;
+    const geo = new THREE.PlaneGeometry(240, 240, 1, 1);
+    const tex = new THREE.TextureLoader().load("https://threejs.org/examples/textures/waternormals.jpg");
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(6, 6);
+    const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 1.0, metalness: 0.0 });
+    ocean = new THREE.Mesh(geo, mat);
+    ocean.rotation.x = -Math.PI / 2;
+    ocean.position.y = -2.9;
+    scene.add(ocean);
+  }
+
+  // Creature model (placeholder)
+  const loader = new THREE.GLTFLoader();
+  let creature = null;
+
+  function loadCreature() {
+    return new Promise((resolve, reject) => {
+      loader.load(
+        "https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/examples/models/gltf/Parrot.glb",
+        (gltf) => {
+          creature = gltf.scene;
+          creature.scale.setScalar(0.05);
+          creature.position.set(0, 0.6, 0);
+          creature.userData.flyAway = false;
+          scene.add(creature);
+          resolve();
+        },
+        undefined,
+        reject
+      );
+    });
+  }
+
+  // UI elements for cinematic beats
+  const inputBox = document.getElementById("inputBox");
+  const door = document.getElementById("door");
+
+  let timelineStarted = false;
+
+  async function runTimeline() {
+    if (timelineStarted) return;
+    timelineStarted = true;
+
+    // Beat 1: wait 2 seconds
+    await new Promise(r => setTimeout(r, 2000));
+
+    // Beat 2: load creature
+    await loadCreature();
+
+    // Beat 3: “tear apart” input box (shrink)
+    let scale = 1;
+    const shrinkTimer = setInterval(() => {
+      scale -= 0.06;
+      inputBox.style.transform = `translate(-50%, -50%) scale(${Math.max(scale, 0)})`;
+      inputBox.style.opacity = String(Math.max(scale, 0));
+      if (scale <= 0) {
+        clearInterval(shrinkTimer);
+        inputBox.remove();
+
+        // Beat 4: door appears
+        door.style.transform = "translate(-50%, -50%) scale(1)";
+
+        // Beat 5: satellites
+        createSatellites();
+
+        // Beat 6: ocean appears
+        setTimeout(addOcean, 700);
+
+        // Beat 7: “morph to bird and fly away”
+        setTimeout(() => { if (creature) creature.userData.flyAway = true; }, 1500);
+      }
+    }, 60);
+  }
+
+  runTimeline();
+
+  // Animation loop
+  const clock = new THREE.Clock();
+  function animate() {
+    requestAnimationFrame(animate);
+    const dt = clock.getDelta();
+    const t = clock.elapsedTime;
+
+    controls.update();
+
+    // Ocean scroll
+    if (ocean?.material?.map) {
+      ocean.material.map.offset.x += dt * 0.01;
+      ocean.material.map.offset.y += dt * 0.008;
+    }
+
+    // Satellite orbits around the door region (slightly behind camera center)
+    for (const s of satellites) {
+      const { radius, speed, phase, height } = s.userData;
+      const a = t * speed + phase;
+      s.position.set(Math.cos(a) * radius, height, Math.sin(a) * radius - 2);
+    }
+
+    // Creature motion
+    if (creature) {
+      // idle float
+      if (!creature.userData.flyAway) {
+        creature.position.y = 0.7 + Math.sin(t * 1.6) * 0.2;
+        creature.rotation.y += dt * 0.6;
+      } else {
+        // fly away
+        creature.position.y += dt * 4.2;
+        creature.position.z -= dt * 6.0;
+        creature.position.x += Math.sin(t * 2.0) * dt * 1.2;
+        creature.rotation.y += dt * 1.4;
+        if (creature.position.y > 80) creature.visible = false;
+      }
+    }
+
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  window.addEventListener("resize", () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  // =========================================================
+  // OPENAI REALTIME VOICE (WEBRTC) — NO BROWSER SPEECH API
+  // =========================================================
+  const btnStartVoice = document.getElementById("btnStartVoice");
+  const btnStopVoice  = document.getElementById("btnStopVoice");
+  const statusEl = document.getElementById("status");
+  const remoteAudio = document.getElementById("remoteAudio");
+
+  const setStatus = (s) => statusEl.textContent = "Status: " + s;
+
+  let pc = null;
+  let dc = null;
+  let micStream = null;
+
+  function stopVoice() {
+    try { dc && dc.close(); } catch(_) {}
+    try { pc && pc.close(); } catch(_) {}
+    dc = null; pc = null;
+
+    try { micStream && micStream.getTracks().forEach(t => t.stop()); } catch(_) {}
+    micStream = null;
+
+    setStatus("idle");
+  }
+
+  async function startVoice() {
+    if (pc) return;
+
+    setStatus("requesting mic");
+    pc = new RTCPeerConnection();
+
+    pc.ontrack = (e) => {
+      remoteAudio.srcObject = e.streams[0];
+      setStatus("connected / speaking");
+    };
+
+    micStream = await navigator.mediaDevices.getUserMedia({ audio:true });
+    micStream.getTracks().forEach(track => pc.addTrack(track, micStream));
+
+    dc = pc.createDataChannel("oai-events");
+    dc.onopen = () => {
+      setStatus("connected / listening");
+
+      // Session config is sent via /api/session; this update just sets behavior.
+      dc.send(JSON.stringify({
+        type: "session.update",
+        session: {
+          instructions: "You are Customer Care AI. Voice-only. Keep replies brief and helpful. Ask minimal questions.",
+          modalities: ["audio"]
+        }
+      }));
+
+      dc.send(JSON.stringify({
+        type: "response.create",
+        response: { modalities:["audio"], instructions:"Say: Customer Care AI online. How can I help?" }
+      }));
+    };
+
+    dc.onerror = () => setStatus("error");
+    dc.onclose = () => setStatus("closed");
+
+    setStatus("connecting");
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+
+    // Unified interface: browser posts SDP to your server, which calls /v1/realtime/calls. :contentReference[oaicite:0]{index=0}
+    const r = await fetch("/api/session", {
+      method: "POST",
+      headers: { "Content-Type":"application/sdp" },
+      body: offer.sdp
+    });
+
+    if (!r.ok) throw new Error("session relay failed: " + r.status);
+    const answerSdp = await r.text();
+
+    await pc.setRemoteDescription({ type:"answer", sdp: answerSdp });
+    setStatus("connected / listening");
+  }
+
+  btnStartVoice.addEventListener("click", async () => {
+    try { await startVoice(); }
+    catch(e){ console.error(e); setStatus("error"); stopVoice(); }
+  });
+
+  btnStopVoice.addEventListener("click", () => stopVoice());
+
+  setStatus("idle");
+})();
+</script>
+</body>
+</html>
